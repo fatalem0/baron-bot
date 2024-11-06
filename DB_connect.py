@@ -10,7 +10,6 @@ class DB:
             user="itmo",
             password="baron-itmo",
             target_session_attrs="read-write",
-            sslrootcert=r"C:\Users\maks2\.postgresql\root.crt"
         )
 
     def get_conn(self):
