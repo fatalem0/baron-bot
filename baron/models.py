@@ -6,6 +6,8 @@ from peewee import (
     PostgresqlDatabase, Check, DateTimeField, SQL, CompositeKey,
 )
 
+from configs.models import load_config_global
+
 db = PostgresqlDatabase(
     "baron",
     user="itmo",
@@ -13,15 +15,14 @@ db = PostgresqlDatabase(
     host='c-c9qhi5jpif1h5cqvlh32.rw.mdb.yandexcloud.net',
     port="6432",
     sslmode="verify-full",
-    sslrootcert=r"/Users/fatalem0/.postgresql/root.crt"
+    sslrootcert=load_config_global().sslrootcert
 )
 
 
 class BaseModel(Model):
     class Meta:
         database = db
-        schema = 'tsyganov_test'
-
+        schema = load_config_global().schema
 
 class Users(BaseModel):
     id = IntegerField(primary_key=True)
@@ -38,7 +39,7 @@ class Events(BaseModel):
 
 class EventOptions(BaseModel):
     event_id = ForeignKeyField(Events, backref="event_options", on_delete='CASCADE')
-    date = DateTimeField()
+    date = CharField()
     place = CharField()
     place_link = CharField(null=True)
     created_at = DateTimeField(constraints=[SQL('DEFAULT CURRENT_TIMESTAMP')])

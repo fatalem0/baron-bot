@@ -1,8 +1,12 @@
 {
   "telegram": {
-    "token": "MY_LOCAL_TOKEN"
+    "token": "7755010868:AAHq4MoVsoeHM1_XcVBV9m8tbnQcJppsvHI"
   },
   "2gis": {
     "token": "b3db9811-4a90-434e-9ff9-667cf852bfc3"
+  },
+  "db": {
+    "sslrootcert": "C:\\Users\\maks2\\.postgresql\\root.crt",
+    "schema": "petrenko_test"
   }
 }
