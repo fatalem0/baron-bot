@@ -1,6 +1,6 @@
 import argparse
 
-from baron.commands import main
+from baron.start import main
 from configs import models
 
 if __name__ == '__main__':
