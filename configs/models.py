@@ -1,3 +1,4 @@
+import argparse
 import json
 import pathlib
 import dataclasses
@@ -8,6 +9,8 @@ import enum
 class Config:
     telegram_token: str
     gis_token: str
+    sslrootcert: str
+    schema:str
 
 
 class Environment(str, enum.Enum):
@@ -22,4 +25,12 @@ def load_config(env: Environment) -> Config:
         return Config(
             telegram_token=config_json['telegram']['token'],
             gis_token=config_json['2gis']['token'],
+            sslrootcert=config_json['db']['sslrootcert'],
+            schema=config_json['db']['schema']
         )
+
+def load_config_global() -> Config:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--env', type=Environment, required=False, default=Environment.local)
+    args = parser.parse_args()
+    return load_config(args.env)

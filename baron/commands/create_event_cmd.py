@@ -58,7 +58,7 @@ async def set_place(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if context.chat_data['is_group']:
         chat_id = update.message.chat_id
-        chat_members = await context.bot.getChatMember(chat_id)
+        chat_members = await context.bot.getChatMembers(chat_id)
         chat_members_usernames = [member.user.username for member in chat_members]
         context.chat_data['event_attendees'] = chat_members_usernames
         return MIN_ATTENDEES

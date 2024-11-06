@@ -20,3 +20,7 @@ def find_user_by_id(id):
     finally:
         if not db.is_closed():
             db.close()
+
+
+def find_user_by_username(username):
+    return Users.get(Users.username == username).id
