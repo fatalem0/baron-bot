@@ -8,7 +8,7 @@ jobs:
     runs-on: [ubuntu-latest]
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-python@v1
+      - uses: actions/setup-python@v3
         with:
           python-version: 3.9
           architecture: 'x64'
@@ -50,9 +50,12 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
       - name: Stop & Remove
-        run: ssh $VM "sudo docker stop $DOCKER && sudo docker rmi --force $DOCKER || echo skip $VM $DOCKER"
+        run: |
+          ssh $VM "for image in \$(sudo docker ps | grep $DOCKER | awk '{print \$1}'); do sudo docker stop \$image; done"
       - name: Pull & Run
-        run: ssh $VM "sudo docker pull $DOCKER && sudo docker run $DOCKER"
+        run: |
+          ssh $VM "sudo docker pull $DOCKER"
+          ssh $VM "sudo docker run $DOCKER &"
       - name: Cleanup
         if: always()
         run: rm -rf ~/.ssh
