@@ -10,7 +10,8 @@ CREATE type "status" AS ENUM (
 
 CREATE TABLE "users" (
                          "id" bigint PRIMARY KEY,
-                         "username" varchar UNIQUE NOT NULL
+                         "username" varchar UNIQUE NOT NULL,
+                         "with_bot_chat_id" bigint UNIQUE NOT NULL
 );
 
 CREATE TABLE "events" (

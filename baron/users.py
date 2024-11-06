@@ -23,4 +23,11 @@ def find_user_by_id(id):
 
 
 def find_user_by_username(username):
-    return Users.get(Users.username == username).id
+    user = Users.get_or_none(Users.username == username)
+
+    if user is None:
+        logger.error(f"Пользователь с именем {username} не найден")
+    else:
+        logger.info(f"Пользователь с именем {username} найден")
+
+    return user

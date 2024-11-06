@@ -18,23 +18,38 @@ logger = logging.getLogger(__name__)
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     username = update.effective_user.username
     user_id = update.effective_user.id
+    with_bot_chat_id = update.message.chat_id
 
-    logger.info(f"Received /start from user: {username} with ID: {user_id}")
+    logger.info(f"Вызов команды /start от {username} с ID = {user_id}")
 
     if db.is_closed():
         db.connect()
 
     try:
-        user, created = Users.get_or_create(id=user_id, defaults={'username': username})
+        user, created = Users.get_or_create(id=user_id, defaults={'username': username},
+                                            with_bot_chat_id=with_bot_chat_id)
+        start_msg = (
+            "🎉 Добро пожаловать в BarOn Bot! 🎉\n"
+            "Надоело собирать всех своих друзей в бар? Давай сделаем это удобнее\n\n"
+            "🔥 Что я могу сделать:\n"
+            "- Создать сообщение с датой и местом, где хочешь собрать друзей, и переслать его \n"
+            "- Устроить голосование по поводу даты и места \n"
+            "- Собрать всех желающих в отдельный чат \n\n"
+            "Чтобы узнать все мои команды, пиши /help"
+        )
         if created:
-            await update.message.reply_text(f"Welcome, {username}! You have been registered.")
-            logger.info(f"New user registered: {username}")
+            prefix_start_msg = (
+                f"{username}, welcome to the club, buddy\n"
+            )
+            result_start_msg = prefix_start_msg + start_msg
+
+            await update.message.reply_text(result_start_msg)
+            logger.info(f"Пользователь {username} успешно зарегистрирован")
         else:
-            await update.message.reply_text(f"Welcome back, {username}!")
-            logger.info(f"Returning user: {username}")
+            await update.message.reply_text(start_msg)
     except IntegrityError as e:
-        logger.error(f"Error inserting user {username}: {e}")
-        await update.message.reply_text("An error occurred while registering. Please try again.")
+        logger.error(f"Ошибка при создании пользователя {username}: {e}")
+        await update.message.reply_text("Кажется, у нас технические шоколадки. Попробуй снова")
     finally:
         if not db.is_closed():
             db.close()
