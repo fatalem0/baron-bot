@@ -49,13 +49,13 @@ jobs:
           install -m 600 -D /dev/null ~/.ssh/id_rsa
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
-      - name: Stop & Remove
+      - name: Stop
         run: |
           ssh $VM "for image in \$(sudo docker ps | grep $DOCKER | awk '{print \$1}'); do sudo docker stop \$image; done"
       - name: Pull & Run
         run: |
           ssh $VM "sudo docker pull $DOCKER"
-          ssh $VM "sudo docker run $DOCKER &"
+          ssh $VM "sudo docker run --rm -d $DOCKER"
       - name: Cleanup
         if: always()
         run: rm -rf ~/.ssh
