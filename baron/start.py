@@ -5,7 +5,9 @@ import DB_connect  # Подключение к вашей базе данных
 
 from configs.models import Config
 
+
 from baron.commands.create_event import create_event
+from baron.commands.create_payment import register_handlers
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -199,5 +201,6 @@ def main(config: Config) -> None:
     application.add_handler(CommandHandler("create_event", create_event))
     application.add_handler(CommandHandler("poll", poll_event))
     application.add_handler(PollAnswerHandler(handle_poll_answer))  # Обработка ответов на опрос
+    register_handlers(application)
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)
