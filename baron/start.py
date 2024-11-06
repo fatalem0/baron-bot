@@ -10,6 +10,8 @@ from baron.commands.poll import poll_event, handle_poll_answer
 from baron.commands.start_cmd import start_cmd
 from configs.models import Config
 
+from baron.commands.create_payment import register_handlers
+
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
@@ -40,6 +42,7 @@ def main(config: Config) -> None:
         PollAnswerHandler(handle_poll_answer)
     ]
 
+    register_handlers(application)
     for handle in handles:
         application.add_handler(handle)
 
