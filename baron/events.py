@@ -14,7 +14,16 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-def create_event(event_author_id, event_name, event_date, event_place, event_attendees, event_min_attendees):
+def create_event(
+        event_author_id,
+        event_name,
+        event_date,
+        event_place,
+        event_attendees,
+        event_min_attendees,
+        event_latitude,
+        event_longitude
+):
     logger.info(
         """
         Пытаемся создать ивент
@@ -23,22 +32,27 @@ def create_event(event_author_id, event_name, event_date, event_place, event_att
         event_date = %s,
         event_place = %s,
         event_attendees = %s,
-        event_min_attendees = %s
+        event_min_attendees = %s,
+        event_latitude = %s,
+        event_longitude = %s
         """,
         event_author_id,
         event_name,
         event_date,
         event_place,
         event_attendees,
-        event_min_attendees
+        event_min_attendees,
+        event_latitude,
+        event_longitude
     )
-
     try:
         with db.atomic():
             new_event = Events.create(
                 author_id=event_author_id,
                 name=event_name,
-                min_attendees=event_min_attendees
+                min_attendees=event_min_attendees,
+                latitude=event_latitude,
+                longitude=event_longitude,
             )
             logger.info('Создана запись в таблице events')
             EventOptions.create(

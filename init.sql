@@ -1,6 +1,6 @@
-drop schema tsyganov_test cascade;
-create schema tsyganov_test;
-set search_path to tsyganov_test;
+drop schema ilatypov_test cascade;
+create schema ilatypov_test;
+set search_path to ilatypov_test;
 
 CREATE type "status" AS ENUM (
     'pending',
@@ -20,7 +20,9 @@ CREATE TABLE "events" (
                           "name" varchar not null,
                           "min_attendees" bigint not null,
                           "created_at" timestamp not null default now(),
-                          "status_id" status
+                          "status_id" status,
+                          "latitude" FLOAT NOT NULL,
+                          "longitude" FLOAT NOT NULL
 );
 
 CREATE TABLE "event_options" (

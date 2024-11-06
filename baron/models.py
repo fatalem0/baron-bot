@@ -2,6 +2,7 @@ from peewee import (
     CharField,
     ForeignKeyField,
     IntegerField,
+    FloatField,
     Model,
     PostgresqlDatabase, Check, DateTimeField, SQL, CompositeKey,
 )
@@ -31,11 +32,14 @@ class Users(BaseModel):
 
 
 class Events(BaseModel):
+    id = IntegerField(primary_key=True)
     author_id = ForeignKeyField(Users, backref="events")
     name = CharField()
     min_attendees = IntegerField(constraints=[Check('min_attendees > 1')])
     created_at = DateTimeField(constraints=[SQL('DEFAULT CURRENT_TIMESTAMP')])
     status_id = CharField(null=True)
+    latitude = FloatField()
+    longitude = FloatField()
 
 
 class EventOptions(BaseModel):
