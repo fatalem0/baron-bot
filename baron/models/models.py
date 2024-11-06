@@ -31,7 +31,7 @@ class Event(Model):
     id = IntegerField(primary_key=True)
     user = ForeignKeyField(User, backref="events", column_name="author_id")
     created_at = TimestampField(null=True)
-    min_person_cnt = IntegerField(default=0, constraints=[Check('min_person_cnt >= 0')])
+    min_person_cnt = IntegerField(default=0, constraints=[Check('min_person_cnt > 0')])
     status_id = CharField(null=True)
 
     class Meta:
