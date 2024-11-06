@@ -1,0 +1,58 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.9
+          architecture: 'x64'
+      - name: Install requirements
+        run: |
+          pip install -r requirements.txt
+          pip install flake8
+      - name: Checks with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+  docker:
+    needs: [build]
+    runs-on: [ubuntu-latest]
+    env:
+      LOGIN: ${{ secrets.DOCKER_LOGIN }}
+      NAME: ${{ secrets.DOCKER_NAME }}
+      DOCKER: ${{ secrets.DOCKER_LOGIN }}/${{ secrets.DOCKER_NAME }}:main
+    steps:
+      - name: Login to docker
+        run: echo ${{ secrets.DOCKER_TOKEN }} | docker login -u ${{ secrets.DOCKER_LOGIN }} --password-stdin
+      - uses: actions/checkout@master
+      - name: Build image
+        run: docker build -t $LOGIN/$NAME:${GITHUB_REF:11} -f Dockerfile .
+      - name: Push image to docker
+        run: docker push $DOCKER
+
+  deploy:
+    needs: [docker]
+    runs-on: [ubuntu-latest]
+    env:
+      DOCKER: ${{ secrets.DOCKER_LOGIN }}/${{ secrets.DOCKER_NAME }}:main
+      VM: ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}
+    steps:
+      - name: Install ssh keys
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+      - name: Stop & Remove
+        run: ssh $VM "sudo docker stop $DOCKER && sudo docker rmi --force $DOCKER || echo skip $VM $DOCKER"
+      - name: Pull & Run
+        run: ssh $VM "sudo docker pull $DOCKER && sudo docker run $DOCKER"
+      - name: Cleanup
+        if: always()
+        run: rm -rf ~/.ssh
