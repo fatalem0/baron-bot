@@ -4,7 +4,6 @@ from peewee import IntegrityError
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-from baron.commands.create_event import create_event
 from baron.models.models import db, User, Event
 
 logging.basicConfig(
@@ -48,7 +47,5 @@ def main() -> None:
     application = Application.builder().token(token).build()
 
     application.add_handler(CommandHandler("start", start))
-
-    application.add_handler(CommandHandler("create_event", create_event))
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)
