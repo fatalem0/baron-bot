@@ -2,6 +2,7 @@ import argparse
 
 from configs import models
 from baron.start import main
+import DB_connect
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
