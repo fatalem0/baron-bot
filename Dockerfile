@@ -10,4 +10,4 @@ RUN wget "https://storage.yandexcloud.net/cloud-certs/CA.pem" --output-document 
 RUN chmod 0655 ~/.postgresql/root.crt
 
 # run
-CMD ["python", "main.py"]
+CMD ["python", "main.py", "--env", "production"]

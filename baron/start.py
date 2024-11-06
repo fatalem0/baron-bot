@@ -3,6 +3,8 @@ import logging
 from telegram import Update
 from telegram.ext import Application, CommandHandler
 
+from configs.models import Config
+
 from baron.commands.create_event import create_event
 
 logging.basicConfig(
@@ -14,8 +16,8 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-def main() -> None:
-    application = Application.builder().token("TOKEN").build()
+def main(config: Config) -> None:
+    application = Application.builder().token(config.telegram_token).build()
 
     application.add_handler(CommandHandler("create_event", create_event))
 

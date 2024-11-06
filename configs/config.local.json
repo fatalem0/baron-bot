@@ -1,0 +1,8 @@
+{
+  "telegram": {
+    "token": "MY_LOCAL_TOKEN"
+  },
+  "2gis": {
+    "token": "b3db9811-4a90-434e-9ff9-667cf852bfc3"
+  }
+}
