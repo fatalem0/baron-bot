@@ -16,7 +16,7 @@ class Environment(str, enum.Enum):
 
 
 def load_config(env: Environment) -> Config:
-    config_path = pathlib.Path(__file__).parent / f'config.{env}.json'
+    config_path = pathlib.Path(__file__).parent / f'config.{env.value}.json'
     with config_path.open() as config:
         config_json = json.load(config)
         return Config(
