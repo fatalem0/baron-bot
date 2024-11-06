@@ -4,13 +4,12 @@ set search_path to pwa4owski_test;
 
 CREATE type "status" AS ENUM (
     'pending',
-    'completed'
+    'completed',
     'canceled'
     );
 
-
 CREATE TABLE "users" (
-                         "id" serial PRIMARY KEY,
+                         "id" integer PRIMARY KEY,
                          "tg_tag" varchar UNIQUE NOT NULL
 );
 

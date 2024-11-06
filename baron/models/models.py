@@ -4,7 +4,7 @@ from peewee import (
     ForeignKeyField,
     IntegerField,
     Model,
-    PostgresqlDatabase, TimestampField, Check, DateTimeField, CompositeKey,
+    PostgresqlDatabase, TimestampField, Check, DateTimeField, CompositeKey, SQL,
 )
 
 db = PostgresqlDatabase(
@@ -30,7 +30,7 @@ class User(Model):
 class Event(Model):
     id = IntegerField(primary_key=True)
     user = ForeignKeyField(User, backref="events", column_name="author_id")
-    created_at = TimestampField(null=True)
+    created_at = DateTimeField(constraints=[SQL('DEFAULT CURRENT_TIMESTAMP')])
     min_person_cnt = IntegerField(default=0, constraints=[Check('min_person_cnt > 0')])
     status_id = CharField(null=True)
 
@@ -42,7 +42,7 @@ class Event(Model):
 class UserEvent(Model):
     user = ForeignKeyField(User, backref='events', on_delete='CASCADE')
     event = ForeignKeyField(Event, backref='users', on_delete='CASCADE')
-    joined_at = TimestampField()
+    joined_at = DateTimeField(constraints=[SQL('DEFAULT CURRENT_TIMESTAMP')])
 
     class Meta:
         database = db
