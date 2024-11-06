@@ -1,15 +1,7 @@
 import logging
-import psycopg2
 from telegram import Update
-from telegram.ext import Application, CommandHandler
-
-from configs.models import Config
-
-from baron.commands.create_event import create_event
 from telegram.ext import Application, CommandHandler, PollAnswerHandler, ContextTypes
 import DB_connect  # Подключение к вашей базе данных
-from baron.commands.create_event import create_event  # Ваша логика создания события
-from telegram.ext import Application, CommandHandler
 
 from configs.models import Config
 
@@ -70,7 +62,6 @@ def get_all_users():
     return users
 
 
-# Основной хендлер для команды /poll_event
 # Основной хендлер для команды /poll_event
 async def poll_event(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not context.args:
