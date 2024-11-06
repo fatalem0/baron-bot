@@ -55,7 +55,7 @@ jobs:
       - name: Pull & Run
         run: |
           ssh $VM "sudo docker pull $DOCKER"
-          ssh $VM "sudo docker run $DOCKER &"
+          ssh $VM "sudo docker run -d $DOCKER"
       - name: Cleanup
         if: always()
         run: rm -rf ~/.ssh
