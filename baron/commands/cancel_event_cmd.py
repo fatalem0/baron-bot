@@ -57,13 +57,13 @@ async def cancel_event_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         attendees = UsersEvents.select(Users).join(Users).where(UsersEvents.event_id == found_event.id)
         event = find_event_by_id(event_id)
         event_options = EventOptions.get_or_none(EventOptions.event_id == event_id)
-        event_author_name = find_user_by_id(event.author_id)
+        event_author: Users = find_user_by_id(event.author_id)
 
         delete_event_by_id(event_id)
 
         sent_to_others_message = (
             f"❌Событие '{found_event.name}' отменено\n"
-            f"🏆Организатор события - {event_author_name}\n"
+            f"🏆Организатор события - {event_author.username}\n"
             f"📍Место - {event_options.place}\n"
             f"📌Адрес - {event.latitude}, {event.longitude}\n"
             f"🕒Время - {event_options.date}\n"
