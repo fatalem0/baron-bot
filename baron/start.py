@@ -4,6 +4,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, ConversationHandler, MessageHandler, filters, PollAnswerHandler, \
     CallbackQueryHandler
 
+from baron.commands.add_option import add_option_cmd, FINISH_CREATE_OPTION, OPTION_DATE, OPTION_PLACE
 from baron.commands.cancel_event_cmd import cancel_event_cmd
 from baron.commands.create_event_cmd import set_date, set_place, opt_set_attendees, set_min_attendees, \
     finish_create_event, create_event_cmd, DATE, PLACE, ATTENDEES, MIN_ATTENDEES, FINISH_CREATE_EVENT, \
@@ -42,6 +43,7 @@ def main(config: Config) -> None:
             fallbacks=[]
         ),
         CallbackQueryHandler(create_event_callback),
+
         CommandHandler("cancel_event", cancel_event_cmd),
 
         CommandHandler("help", help_cmd),
@@ -52,7 +54,18 @@ def main(config: Config) -> None:
         CommandHandler("create_payment", create_payment),
         MessageHandler(filters.TEXT & filters.ChatType.GROUPS, handle_buttons),
         MessageHandler(filters.PHOTO & filters.ChatType.GROUPS, photo_handler),
-        CallbackQueryHandler(button_handler, pattern='button_clicked')
+        CallbackQueryHandler(button_handler, pattern='button_clicked'),
+
+        ConversationHandler(
+            entry_points=[CommandHandler("add_option", add_option_cmd)],
+            states={
+                OPTION_DATE: [MessageHandler(filters.TEXT, set_date)],
+                OPTION_PLACE: [MessageHandler(filters.TEXT, set_place)],
+                FINISH_CREATE_OPTION: [MessageHandler(filters.TEXT, finish_create_event)]
+            },
+            fallbacks=[]
+        ),
+
     ]
 
     for handler in handlers:
