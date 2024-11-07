@@ -5,6 +5,7 @@ from telegram.ext import Application, CommandHandler, ConversationHandler, Messa
     CallbackQueryHandler
 
 from baron.background_jobs.start_background_jobs import start_background_jobs
+from baron.commands.poll_info import poll_info
 from baron.commands.add_option import add_option_cmd, OPTION_DATE, OPTION_PLACE, set_option_date, \
     set_option_place
 from baron.commands.approve_event_cmd import approve_event_cmd
@@ -35,6 +36,8 @@ def main(config: Config = load_config_global()) -> None:
         nearby_change_handlers() + [
             CommandHandler("start", start_cmd),
 
+            CommandHandler("poll_info", poll_info),
+
             ConversationHandler(
                 entry_points=[CommandHandler("create_event", create_event_cmd)],
                 states={
@@ -64,7 +67,7 @@ def main(config: Config = load_config_global()) -> None:
                     OPTION_PLACE: [MessageHandler(filters.TEXT, set_option_place)]
                 },
                 fallbacks=[]
-            ),
+            )
         ]
 
     for handler in handlers:
