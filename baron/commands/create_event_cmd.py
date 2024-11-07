@@ -1,11 +1,11 @@
 import logging
 
-from telegram import Update
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.constants import ParseMode
 from telegram.ext import ConversationHandler, ContextTypes
 
 from baron.events import create_event
-from baron.users import find_user_by_id
+from baron.users import find_user_by_id, delete_user_from_event, find_user_by_username
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -170,11 +170,17 @@ async def finish_create_event(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     found_attendee_with_bot_chat_ids = [found_attendee.with_bot_chat_id for found_attendee in found_attendees]
 
+    keyboard = [
+        [InlineKeyboardButton("Могу", callback_data='mogu')],
+        [InlineKeyboardButton("Не могу", callback_data='ne_mogu')]
+    ]
+
     for attendee_with_bot_chat_id in found_attendee_with_bot_chat_ids:
         await context.bot.send_message(
             chat_id=attendee_with_bot_chat_id,
             text=sent_to_others_message,
-            parse_mode=ParseMode.MARKDOWN
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
     final_msg = (
@@ -190,3 +196,25 @@ async def finish_create_event(update: Update, context: ContextTypes.DEFAULT_TYPE
     await update.message.reply_text(final_msg, parse_mode=ParseMode.MARKDOWN)
 
     return ConversationHandler.END
+
+
+async def create_event_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    action = query.data
+    username = query.from_user.username
+    logger.info(f'Ответ от пользователя {username} для команды create_event = {action}')
+
+    if action == 'mogu':
+        await update.effective_message.edit_text("Вы подтвердили участие!")
+        # TODO: Здесь можно добавить логику для обработки подтверждения участия
+    elif action == 'ne_mogu':
+        await update.effective_message.edit_text("Сорян(")
+
+        found_user = find_user_by_username(username)
+        if found_user:
+            found_user_id = found_user.id
+            delete_user_from_event(found_user_id)
+        else:
+            await update.effective_message.edit_text("Не нашли тебя в БД, сорян(")

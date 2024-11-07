@@ -1,6 +1,8 @@
 import logging
 
-from baron.models import Users, db
+from peewee import IntegrityError
+
+from baron.models import Users, db, UsersEvents
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -31,3 +33,11 @@ def find_user_by_username(username):
         logger.info(f"Пользователь с именем {username} найден")
 
     return user
+
+
+def delete_user_from_event(user_id):
+    try:
+        UsersEvents.delete().where(UsersEvents.user_id == user_id).execute()
+        logger.info(f"Запись с user_id = {user_id} удалена из таблицы users_events")
+    except IntegrityError as ex:
+        logger.error(f'Ошибка при записи с user_id = {user_id} из таблицы users_events: {ex}')

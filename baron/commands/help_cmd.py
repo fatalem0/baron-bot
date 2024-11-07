@@ -8,7 +8,8 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🍻BarON бот🍻\n"
         "---------\n"
         "Команды:\n"
-        "*/create_event:* Создать мероприятие\n"
+        "*/create_event:* Создать событие\n"
+        "*/cancel_event {event_id}:* Отменить событие\n"
         "*/help:* Вывести все команды\n"
     )
 

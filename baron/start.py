@@ -4,8 +4,10 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, ConversationHandler, MessageHandler, filters, PollAnswerHandler, \
     CallbackQueryHandler
 
+from baron.commands.cancel_event_cmd import cancel_event_cmd
 from baron.commands.create_event_cmd import set_date, set_place, opt_set_attendees, set_min_attendees, \
-    finish_create_event, create_event_cmd, DATE, PLACE, ATTENDEES, MIN_ATTENDEES, FINISH_CREATE_EVENT
+    finish_create_event, create_event_cmd, DATE, PLACE, ATTENDEES, MIN_ATTENDEES, FINISH_CREATE_EVENT, \
+    create_event_callback
 from baron.commands.create_payment import create_payment, handle_buttons, photo_handler, \
     button_handler
 from baron.commands.help_cmd import help_cmd
@@ -39,6 +41,8 @@ def main(config: Config) -> None:
             },
             fallbacks=[]
         ),
+        CallbackQueryHandler(create_event_callback),
+        CommandHandler("cancel_event", cancel_event_cmd),
 
         CommandHandler("help", help_cmd),
 

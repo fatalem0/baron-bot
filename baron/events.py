@@ -67,3 +67,16 @@ def create_event(event_author_id, event_name, event_date, event_place, event_att
             return new_event.id, found_attendees
     except IntegrityError as ex:
         logger.error(f'Ошибка при создании ивента: {ex}')
+
+
+def delete_event_by_id(event_id):
+    try:
+        with db.atomic():
+            EventOptions.delete().where(EventOptions.event_id == event_id).execute()
+            logger.info(f'Записb в таблице event_options с ID = {event_id} удалены')
+            UsersEvents.delete().where(UsersEvents.event_id == event_id).execute()
+            logger.info(f'Записи в таблице users_events с ID = {event_id} удалены')
+            Events.delete().where(Events.id == event_id).execute()
+            logger.info(f'Запись в таблице events с ID = {event_id} удалена')
+    except IntegrityError as ex:
+        logger.error(f'Ошибка при удалении ивента с ID = {event_id}: {ex}')
