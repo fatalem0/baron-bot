@@ -7,6 +7,7 @@ from requests import options
 from telegram import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext, CommandHandler, MessageHandler
 import DB_connect
+from baron.commands.nearby_cmd import init_nearby_handler
 from baron.models import db, Events, EventOptions, UserOption
 from configs.models import load_config_global
 
@@ -30,6 +31,7 @@ async def poll_event(update: Update, context: CallbackContext):
 
     try:
         event_id = int(context.args[0])  # Преобразуем event_id в целое число для безопасности
+        context.user_data['event_id'] = event_id
     except ValueError:
         await update.message.reply_text("Неверный формат ID события. Пожалуйста, используйте целое число.")
         return
@@ -67,6 +69,7 @@ async def poll_event(update: Update, context: CallbackContext):
 
         # Добавляем кнопку "Предложить свой вариант"
         reply_keyboard.append([InlineKeyboardButton("Предложить свой вариант", callback_data="new_option")])
+        reply_keyboard.append([InlineKeyboardButton("А что есть рядом?", callback_data="adv_option")])
 
         # Отправляем информацию о событии и клавиатуру
         markup = InlineKeyboardMarkup(reply_keyboard)
@@ -91,7 +94,11 @@ async def handle_poll_selection(update: Update, context: CallbackContext):
 
     # Обрабатываем нажатие на кнопку "Предложить свой вариант"
     if selection_text == "new_option":
-        await handle_suggest_option(query)
+        await handle_suggest_option(update, context)
+        return
+
+    if selection_text == "adv_option":
+        await handle_adv_option(update, context)
         return
 
     try:
@@ -168,6 +175,7 @@ async def handle_poll_selection(update: Update, context: CallbackContext):
 
     # Добавляем кнопку "Предложить свой вариант"
     inline_keyboard.append([InlineKeyboardButton("Предложить свой вариант", callback_data="new_option")])
+    inline_keyboard.append([InlineKeyboardButton("А что есть рядом?", callback_data="adv_option")])
 
     # Обновляем разметку с кнопками
     try:
@@ -177,13 +185,18 @@ async def handle_poll_selection(update: Update, context: CallbackContext):
         logging.error(f"Ошибка при обновлении сообщения: {e}")
 
 
-async def handle_suggest_option(query):
-    # Выводим сообщение или предлагаем пользователю что-то
-    await query.message.reply_text("Предложите свой вариант")
-    # Дополнительная логика для предложения варианта
+async def handle_suggest_option(update: Update, context: CallbackContext):
     logger.info("other variant")
-    await query.answer()
-    return
+    # Выводим сообщение или предлагаем пользователю что-то
+    text = "Предложите свой вариант"
+    await update.message.reply_text(text)
+
+
+async def handle_adv_option(update: Update, context: CallbackContext):
+    event_id = context.user_data['event_id']
+    await init_nearby_handler(event_id, update, context)
+
+
 # # Функция для получения списка всех зарегистрированных пользователей из базы данных
 # def get_all_users():
 #     db = DB_connect.DB()
