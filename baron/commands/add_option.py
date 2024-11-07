@@ -46,7 +46,7 @@ async def add_option_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
-async def set_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def set_option_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.chat_data['event_date'] = update.message.text
 
     logger.info(
@@ -62,7 +62,7 @@ async def set_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return OPTION_PLACE
 
 
-async def set_place(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def set_option_place(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.chat_data['event_place'] = update.message.text
 
     logger.info(
@@ -71,10 +71,6 @@ async def set_place(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.chat_data['event_place']
     )
 
-    return FINISH_CREATE_OPTION
-
-
-async def finish_create_option(update: Update, context: ContextTypes.DEFAULT_TYPE):
     event_id = context.chat_data['event_id']
     user_id = update.effective_user.id
 
@@ -89,15 +85,17 @@ async def finish_create_option(update: Update, context: ContextTypes.DEFAULT_TYP
         option_author_id
     )
 
+    logger.info("Опция %s добавлена", new_option_id)
+
+
     attendees = get_event_members(event_id)
     found_attendee_with_bot_chat_ids = [found_attendee.with_bot_chat_id for found_attendee in attendees]
 
     for attendee_with_bot_chat_id in found_attendee_with_bot_chat_ids:
         await context.bot.send_message(
             chat_id=attendee_with_bot_chat_id,
-            text=("Добавился новый вариант досуга на мероприятие %s, чтобы заново проголосовать, введите команду /poll %s", event_id, event_date),
+            text=f"Добавился новый вариант досуга на мероприятие {event_id}, чтобы заново проголосовать, введи команду /poll {event_id}",
             parse_mode=ParseMode.MARKDOWN,
         )
 
     return ConversationHandler.END
-

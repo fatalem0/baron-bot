@@ -4,7 +4,8 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, ConversationHandler, MessageHandler, filters, PollAnswerHandler, \
     CallbackQueryHandler
 
-from baron.commands.add_option import add_option_cmd, FINISH_CREATE_OPTION, OPTION_DATE, OPTION_PLACE
+from baron.commands.add_option import add_option_cmd, FINISH_CREATE_OPTION, OPTION_DATE, OPTION_PLACE, set_option_date, \
+    set_option_place
 from baron.commands.cancel_event_cmd import cancel_event_cmd
 from baron.commands.create_event_cmd import set_date, set_place, set_location, opt_set_attendees, set_min_attendees, \
     finish_create_event, create_event_cmd, DATE, PLACE, LOCATION, ATTENDEES, MIN_ATTENDEES, FINISH_CREATE_EVENT, \
@@ -53,9 +54,8 @@ def main(config: Config = load_config_global()) -> None:
         ConversationHandler(
             entry_points=[CommandHandler("add_option", add_option_cmd)],
             states={
-                OPTION_DATE: [MessageHandler(filters.TEXT, set_date)],
-                OPTION_PLACE: [MessageHandler(filters.TEXT, set_place)],
-                FINISH_CREATE_OPTION: [MessageHandler(filters.TEXT, finish_create_event)]
+                OPTION_DATE: [MessageHandler(filters.TEXT, set_option_date)],
+                OPTION_PLACE: [MessageHandler(filters.TEXT, set_option_place)]
             },
             fallbacks=[]
         ),

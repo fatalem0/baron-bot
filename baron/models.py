@@ -27,7 +27,7 @@ class BaseModel(Model):
 class Users(BaseModel):
     id = IntegerField(primary_key=True)
     username = CharField(unique=True)
-    with_bot_chat_id = IntegerField()
+    with_bot_chat_id = IntegerField(unique=True)
 
 
 class Events(BaseModel):
