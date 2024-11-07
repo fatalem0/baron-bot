@@ -48,10 +48,11 @@ def main(config: Config = load_config_global()) -> None:
         CommandHandler("poll", poll_event),
         CallbackQueryHandler(handle_poll_selection, pattern='^.*$')
     ]
+    register_handlers(application)
 
     for handler in handlers:
         application.add_handler(handler)
 
-    register_handlers(application)
+
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)
