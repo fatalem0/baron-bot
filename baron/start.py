@@ -6,7 +6,7 @@ from telegram.ext import Application, CommandHandler, ConversationHandler, Messa
 from baron.commands import help_cmd
 from baron.commands.create_event_cmd import set_date, set_place, opt_set_attendees, set_min_attendees, \
     finish_create_event, create_event_cmd, DATE, PLACE, ATTENDEES, MIN_ATTENDEES, FINISH_CREATE_EVENT
-from baron.commands.poll import poll_event, handle_poll_answer
+from baron.commands.poll import poll_event
 from baron.commands.start_cmd import start_cmd
 from configs.models import Config
 
@@ -39,7 +39,7 @@ def main(config: Config) -> None:
         ),
         CommandHandler("help", help_cmd),
         CommandHandler("poll", poll_event),
-        PollAnswerHandler(handle_poll_answer)
+        #PollAnswerHandler(handle_poll_answer)
     ]
 
     register_handlers(application)
