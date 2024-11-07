@@ -27,7 +27,7 @@ class BaseModel(Model):
 class Users(BaseModel):
     id = IntegerField(primary_key=True)
     username = CharField(unique=True)
-    with_bot_chat_id = IntegerField()
+    with_bot_chat_id = IntegerField(unique=True)
 
 
 class Events(BaseModel):
@@ -65,15 +65,12 @@ class UsersEvents(BaseModel):
 
 
 class UserOption(BaseModel):
-    user_id = IntegerField(primary_key=True)  # ID пользователя (например, ID Telegram)
-    option_id = IntegerField()  # ID выбранного варианта (ссылка на event_options)
+    user_id = ForeignKeyField(Users, backref='userOptions', on_delete='CASCADE')
+    option_id = ForeignKeyField(EventOptions, backref='optionUsers', on_delete='CASCADE')
     status = CharField(default='pending')  # Статус выбора (например, "confirmed", "declined", "pending")
 
     class Meta:
-        database = db  # Подключение к базе данных
-        db_table = 'users_options'  # Имя таблицы в базе данных
-        indexes = (
-            (('user_id', 'option_id'), True),  # Уникальный индекс на комбинацию user_id и option_id
-        )
+        table_name = 'users_options'
+        primary_key = CompositeKey('user_id', 'option_id')
 
-db.bind([Users, Events], bind_refs=False, bind_backrefs=False)
+db.bind([Users, Events, UsersEvents , EventOptions, UserOption], bind_refs=False, bind_backrefs=False)

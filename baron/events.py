@@ -1,8 +1,8 @@
 import logging
 
-from peewee import IntegrityError
+from peewee import IntegrityError, DoesNotExist
 
-from baron.models import Events, db, EventOptions, UsersEvents
+from baron.models import Events, db, EventOptions, UsersEvents, Users
 from baron.users import find_user_by_username
 
 logging.basicConfig(
@@ -94,3 +94,49 @@ def delete_event_by_id(event_id):
             logger.info(f'Запись в таблице events с ID = {event_id} удалена')
     except IntegrityError as ex:
         logger.error(f'Ошибка при удалении ивента с ID = {event_id}: {ex}')
+
+
+def find_event_by_id(event_id):
+    try:
+        return Events.get(Events.id == event_id)
+    except DoesNotExist:
+        logger.error(f'Event with ID {event_id} does not exist.')
+        return None
+    except IntegrityError as ex:
+        logger.error(f'Error finding event with ID {event_id}: {ex}')
+        return None
+
+
+def create_option(event_id, option_date, option_place, option_author_id):
+    logger.info(
+        """
+        Пытаемся создать опцию
+        event_id = %s,
+        option_date = %s,
+        option_place = %s,
+        option_author_id = %s
+        """, event_id, option_date, option_place, option_author_id)
+    try:
+        with db.atomic():
+            option = EventOptions.create(
+                event_id=event_id,
+                date=option_date,
+                place=option_place,
+                author_id=option_author_id
+            )
+            logger.info('Создана запись в таблице event_options')
+            return option.id
+    except IntegrityError as ex:
+        logger.error(f'Error creating event_option with for event with ID {event_id}: {ex}')
+
+
+def get_event_members(event_id):
+    try:
+        user_ids = UsersEvents.select(UsersEvents.user_id).where(UsersEvents.event_id == event_id)
+        return Users.select().where(Users.id.in_(user_ids))
+    except DoesNotExist:
+        logger.error(f"No members found for event with ID {event_id}.")
+        return []
+    except Exception as ex:
+        logger.error(f"Error retrieving members for event with ID {event_id}: {ex}")
+        return []
