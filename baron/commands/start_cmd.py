@@ -18,12 +18,9 @@ logger = logging.getLogger(__name__)
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     username = update.effective_user.username
     user_id = update.effective_user.id
-    with_bot_chat_id = update.message.chat_id
+    with_bot_chat_id = update.effective_chat.id
 
-    logger.info(f"Вызов команды /start от {username} с ID = {user_id}")
-
-    if db.is_closed():
-        db.connect()
+    logger.info(f"Вызов команды /start от {username} с ID = {user_id} в чате {with_bot_chat_id}")
 
     try:
         user, created = Users.get_or_create(id=user_id, defaults={'username': username},
@@ -43,13 +40,10 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             )
             result_start_msg = prefix_start_msg + start_msg
 
-            await update.message.reply_text(result_start_msg)
+            await context.bot.send_message(chat_id=with_bot_chat_id, text=result_start_msg)
             logger.info(f"Пользователь {username} успешно зарегистрирован")
         else:
-            await update.message.reply_text(start_msg)
+            await context.bot.send_message(chat_id=with_bot_chat_id, text=start_msg)
     except IntegrityError as e:
         logger.error(f"Ошибка при создании пользователя {username}: {e}")
         await update.message.reply_text("Кажется, у нас технические шоколадки. Попробуй снова")
-    finally:
-        if not db.is_closed():
-            db.close()

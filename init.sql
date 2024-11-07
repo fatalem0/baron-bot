@@ -3,8 +3,8 @@ create schema baron;
 set search_path to baron;
 
 CREATE type "status" AS ENUM (
-    'pending',
-    'completed',
+    'created',
+    'approved',
     'canceled'
     );
 
