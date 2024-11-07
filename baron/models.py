@@ -4,7 +4,7 @@ from peewee import (
     IntegerField,
     FloatField,
     Model,
-    PostgresqlDatabase, Check, DateTimeField, SQL, CompositeKey,
+    PostgresqlDatabase, Check, DateTimeField, SQL, CompositeKey, BigIntegerField,
 )
 
 from configs.models import load_config_global
@@ -42,6 +42,7 @@ class Events(BaseModel):
 
 
 class EventOptions(BaseModel):
+    id = IntegerField(primary_key=True)
     event_id = ForeignKeyField(Events, backref="event_options", on_delete='CASCADE')
     date = CharField()
     place = CharField()
@@ -62,5 +63,17 @@ class UsersEvents(BaseModel):
         table_name = 'users_events'
         primary_key = CompositeKey('user_id', 'event_id')
 
+
+class UserOption(BaseModel):
+    user_id = IntegerField(primary_key=True)  # ID пользователя (например, ID Telegram)
+    option_id = IntegerField()  # ID выбранного варианта (ссылка на event_options)
+    status = CharField(default='pending')  # Статус выбора (например, "confirmed", "declined", "pending")
+
+    class Meta:
+        database = db  # Подключение к базе данных
+        db_table = 'users_options'  # Имя таблицы в базе данных
+        indexes = (
+            (('user_id', 'option_id'), True),  # Уникальный индекс на комбинацию user_id и option_id
+        )
 
 db.bind([Users, Events], bind_refs=False, bind_backrefs=False)

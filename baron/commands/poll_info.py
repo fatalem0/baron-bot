@@ -20,5 +20,3 @@ logger = logging.getLogger(__name__)
 # Настройка подключения к базе данных через Peewee
 if db.is_closed():
     db.connect()
-    db.execute_sql('SET search_path TO petrenko_test')
-
