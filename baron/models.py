@@ -15,8 +15,7 @@ db = PostgresqlDatabase(
     password="baron-itmo",
     host='c-c9qhi5jpif1h5cqvlh32.rw.mdb.yandexcloud.net',
     port="6432",
-    sslmode="verify-full",
-    sslrootcert=load_config_global().sslrootcert
+    sslmode="verify-full"
 )
 
 
