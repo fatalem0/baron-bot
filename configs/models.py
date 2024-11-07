@@ -6,11 +6,21 @@ import enum
 
 
 @dataclasses.dataclass
+class JobConfig:
+    interval: int
+    first:int
+
+@dataclasses.dataclass
+class JobsConfig:
+    approve_event_if_has_min_attendees: JobConfig
+
+@dataclasses.dataclass
 class Config:
     telegram_token: str
     gis_token: str
     sslrootcert: str
     schema:str
+    jobs: JobsConfig
 
 
 class Environment(str, enum.Enum):
@@ -26,7 +36,8 @@ def load_config(env: Environment) -> Config:
             telegram_token=config_json['telegram']['token'],
             gis_token=config_json['2gis']['token'],
             sslrootcert=config_json['db']['sslrootcert'],
-            schema=config_json['db']['schema']
+            schema=config_json['db']['schema'],
+            jobs=config_json['jobs']
         )
 
 def load_config_global() -> Config:

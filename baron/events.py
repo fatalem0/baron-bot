@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 def create_event(
         event_author_id,
+        event_author_name,
         event_name,
         event_date,
         event_place,
@@ -28,6 +29,7 @@ def create_event(
         """
         Пытаемся создать ивент
         event_author_id = %s,
+        event_author_name = %s,
         event_name = %s,
         event_date = %s,
         event_place = %s,
@@ -37,6 +39,7 @@ def create_event(
         event_longitude = %s
         """,
         event_author_id,
+        event_author_name,
         event_name,
         event_date,
         event_place,
@@ -63,6 +66,12 @@ def create_event(
             )
             logger.info('Создана запись в таблице event_options')
 
+            UsersEvents.create(
+                user_id=event_author_id,
+                event_id=new_event.id
+            )
+            logger.info(f'Инициатор с ID = {event_author_id} события {event_name} добавлен в таблицу users_events')
+
             found_attendees = []
             for attendee in event_attendees:
                 logger.info(f'Пытаемся найти пользователя {attendee}')
@@ -81,6 +90,17 @@ def create_event(
             return new_event.id, found_attendees
     except IntegrityError as ex:
         logger.error(f'Ошибка при создании ивента: {ex}')
+
+
+def find_event_by_id(event_id):
+    event = Events.get_or_none(Events.id == event_id)
+
+    if event is None:
+        logger.error(f"Событие с ID = {event_id} не найдено")
+    else:
+        logger.info(f"Событие с ID = {event_id} найдено")
+
+    return event
 
 
 def delete_event_by_id(event_id):

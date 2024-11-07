@@ -8,5 +8,11 @@
   "db": {
     "sslrootcert": "LOCAL_PATH",
     "schema": "LOCAL_SCHEMA"
+  },
+  "jobs": {
+    "approve_event_if_has_min_attendees": {
+      "interval": 300,
+      "first": 0
+    }
   }
 }
