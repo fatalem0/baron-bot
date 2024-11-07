@@ -7,7 +7,7 @@ from requests import options
 from telegram import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext, CommandHandler, MessageHandler
 import DB_connect
-from baron.models import db
+from baron.models import db, Events, EventOptions, UserOption
 from configs.models import load_config_global
 
 logging.basicConfig(
@@ -21,45 +21,6 @@ logger = logging.getLogger(__name__)
 # Настройка подключения к базе данных через Peewee
 if db.is_closed():
     db.connect()
-    db.execute_sql('SET search_path TO petrenko_test')
-
-
-# Модели для таблиц events, event_options и users_poll
-class Event(Model):
-    id = CharField(primary_key=True)  # ID события
-    name = CharField()
-    min_attendees = CharField()
-    created_at = DateTimeField()
-    status_id = CharField()
-
-    class Meta:
-        database = db  # Подключение к базе данных
-        db_table = 'events'  # Указываем имя таблицы
-
-
-class EventOption(Model):
-    event = ForeignKeyField(Event, backref='options')  # Внешний ключ на событие
-    date = DateTimeField()
-    place = CharField()
-    place_link = CharField(null=True)
-    created_at = DateTimeField()
-
-    class Meta:
-        database = db  # Подключение к базе данных
-        db_table = 'event_options'  # Указываем имя таблицы
-
-
-class UserOption(Model):
-    user_id = BigIntegerField(primary_key=True)  # ID пользователя (например, ID Telegram)
-    option_id = BigIntegerField()  # ID выбранного варианта (ссылка на event_options)
-    status = CharField(default='pending')  # Статус выбора (например, "confirmed", "declined", "pending")
-
-    class Meta:
-        database = db  # Подключение к базе данных
-        db_table = 'users_options'  # Имя таблицы в базе данных
-        indexes = (
-            (('user_id', 'option_id'), True),  # Уникальный индекс на комбинацию user_id и option_id
-        )
 
 # Обработчик команды /poll {id}
 async def poll_event(update: Update, context: CallbackContext):
@@ -77,13 +38,13 @@ async def poll_event(update: Update, context: CallbackContext):
 
     try:
         # Получаем событие по ID
-        event = Event.get_or_none(Event.id == event_id)
+        event = Events.get_or_none(Events.id == event_id)
         if not event:
             await update.message.reply_text(f"Событие с ID {event_id} не найдено.")
             return
 
         # Получаем все варианты для события
-        options = EventOption.select().where(EventOption.event == event)
+        options = EventOptions.select().where(EventOptions.event_id == event.id)
         if not options.exists():
             await update.message.reply_text("Для указанного события нет доступных вариантов.")
             return
@@ -100,8 +61,8 @@ async def poll_event(update: Update, context: CallbackContext):
         for option in options:
             user_selection = next(
                 (selection for selection in user_selections if selection.option_id == option.id), None)
-            status = "🍻" if user_selection and user_selection.status == "confirmed" else "🍺"
-            button_text = f"{option.place} - {option.date.strftime('%Y-%m-%d %H:%M')} ({status})"
+            status = "🍻" if user_selection and user_selection.status == "confirmed" else "❌"
+            button_text = f"{option.place} - {option.date} ({status})"
             reply_keyboard.append([InlineKeyboardButton(button_text, callback_data=f"{option.id}")])
 
         # Добавляем кнопку "Предложить свой вариант"
@@ -141,7 +102,7 @@ async def handle_poll_selection(update: Update, context: CallbackContext):
         return
 
     # Получаем вариант по ID
-    option = EventOption.get_or_none(EventOption.id == option_id)
+    option = EventOptions.get_or_none(EventOptions.id == option_id)
     if not option:
         await query.message.reply_text(f"Вариант с ID {option_id} не найден.")
         return
@@ -164,45 +125,45 @@ async def handle_poll_selection(update: Update, context: CallbackContext):
         action = "подтвердили"
         new_status = "confirmed"
 
-    button_text = f"{option.place} - {option.date.strftime('%Y-%m-%d %H:%M')} ({'🍺' if new_status == 'canceled' else '🍻'})"
-    await query.answer(f"Вы {action} выбор: {option.place} - {option.date.strftime('%Y-%m-%d %H:%M')}")
+    button_text = f"{option.place} - {option.date} ({'❌' if new_status == 'canceled' else '🍻'})"
+    await query.answer(f"Вы {action} выбор: {option.place} - {option.date}")
 
     # Обновляем кнопки для всех вариантов события
-    event_options = EventOption.select().where(EventOption.event == option.event)
+    event_options = EventOptions.select().where(EventOptions.event_id == option.event_id)
     inline_keyboard = []
 
     for opt in event_options:
         # Получаем текущий статус для каждого варианта
-        status = "🍻" if UserOption.get_or_none(user_id=user_id, option_id=opt.id, status="confirmed") else "🍺"
-        button_text = f"{opt.place} - {opt.date.strftime('%Y-%m-%d %H:%M')} ({status})"
+        status = "🍻" if UserOption.get_or_none(user_id=user_id, option_id=opt.id, status="confirmed") else "❌"
+        button_text = f"{opt.place} - {opt.date} ({status})"
         inline_keyboard.append([InlineKeyboardButton(text=button_text, callback_data=f"{opt.id}")])
 
     # Обновляем кнопки для всех вариантов события
-    event_options = EventOption.select().where(EventOption.event == option.event)
+    event_options = EventOptions.select().where(EventOptions.event_id == option.event_id)
     inline_keyboard = []
 
     for opt in event_options:
         # Получаем текущий статус для каждого варианта
-        status = "🍻" if UserOption.get_or_none(user_id=user_id, option_id=opt.id, status="confirmed") else "🍺"
-        button_text = f"{opt.place} - {opt.date.strftime('%Y-%m-%d %H:%M')} ({status})"
+        status = "🍻" if UserOption.get_or_none(user_id=user_id, option_id=opt.id, status="confirmed") else "❌"
+        button_text = f"{opt.place} - {opt.date} ({status})"
         inline_keyboard.append([InlineKeyboardButton(text=button_text, callback_data=f"{opt.id}")])
 
     # Обновляем кнопки для всех вариантов события
-    event_options = EventOption.select().where(EventOption.event == option.event)
+    event_options = EventOptions.select().where(EventOptions.event_id == option.event_id)
     inline_keyboard = []
 
     for opt in event_options:
-        status = "🍻" if UserOption.get_or_none(user_id=user_id, option_id=opt.id, status="confirmed") else "🍺"
-        button_text = f"{opt.place} - {opt.date.strftime('%Y-%m-%d %H:%M')} ({status})"
+        status = "🍻" if UserOption.get_or_none(user_id=user_id, option_id=opt.id, status="confirmed") else "❌"
+        button_text = f"{opt.place} - {opt.date} ({status})"
         inline_keyboard.append([InlineKeyboardButton(text=button_text, callback_data=f"{opt.id}")])
 
     # Обновляем кнопки для всех вариантов события
-    event_options = EventOption.select().where(EventOption.event == option.event)
+    event_options = EventOptions.select().where(EventOptions.event_id == option.event_id)
     inline_keyboard = []
 
     for opt in event_options:
-        status = "🍻" if UserOption.get_or_none(user_id=user_id, option_id=opt.id, status="confirmed") else "🍺"
-        button_text = f"{opt.place} - {opt.date.strftime('%Y-%m-%d %H:%M')} ({status})"
+        status = "🍻" if UserOption.get_or_none(user_id=user_id, option_id=opt.id, status="confirmed") else "❌"
+        button_text = f"{opt.place} - {opt.date} ({status})"
         inline_keyboard.append([InlineKeyboardButton(text=button_text, callback_data=f"{opt.id}")])
 
     # Добавляем кнопку "Предложить свой вариант"
