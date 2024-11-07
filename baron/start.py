@@ -41,7 +41,8 @@ def main(config: Config = load_config_global()) -> None:
             },
             fallbacks=[]
         ),
-        CallbackQueryHandler(create_event_callback),
+        CallbackQueryHandler(create_event_callback, pattern="mogu"),
+        CallbackQueryHandler(create_event_callback, pattern="ne_mogu"),
         CommandHandler("cancel_event", cancel_event_cmd),
 
         CommandHandler("help", help_cmd),
