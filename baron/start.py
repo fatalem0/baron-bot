@@ -15,7 +15,9 @@ from baron.commands.create_event_cmd import set_date, set_place, set_location, s
 from baron.commands.create_payment import register_handlers
 from baron.commands.help_cmd import help_cmd
 from baron.commands.nearby_cmd import nearby_change_handlers
-from baron.commands.poll import poll_event, handle_poll_selection
+from baron.commands.poll_cmd import poll_cmd, START_POLL, ask_for_date_when_new_option, \
+    NEW_OPTION_ASK_PLACE, ask_for_place_when_new_option, NEW_OPTION_END, end_handling_new_option, \
+    poll_new_option_callback
 from baron.commands.start_cmd import start_cmd
 from configs.models import Config, load_config_global
 
@@ -54,8 +56,23 @@ def main(config: Config = load_config_global()) -> None:
             CommandHandler("approve_event", approve_event_cmd),
             CommandHandler("cancel_event", cancel_event_cmd),
             CommandHandler("help", help_cmd),
-            CommandHandler("poll", poll_event),
-            CallbackQueryHandler(handle_poll_selection, pattern='^.*$'),
+
+            ConversationHandler(
+                entry_points=[CommandHandler("poll", poll_cmd)],
+                states={
+                    START_POLL: [
+                        CallbackQueryHandler(ask_for_date_when_new_option, pattern='new_option'),
+                        CallbackQueryHandler(ask_for_date_when_new_option, pattern='adv_option'),
+                        # CallbackQueryHandler(handle_poll_selection, pattern='^.*$')
+                    ],
+                    NEW_OPTION_ASK_PLACE: [MessageHandler(filters.TEXT, ask_for_place_when_new_option)],
+                    NEW_OPTION_END: [MessageHandler(filters.TEXT, end_handling_new_option)]
+                },
+                fallbacks=[]
+            ),
+
+            CallbackQueryHandler(poll_new_option_callback, pattern="new_option_soglasen"),
+            CallbackQueryHandler(poll_new_option_callback, pattern="new_option_ne_soglasen"),
 
             ConversationHandler(
                 entry_points=[CommandHandler("add_option", add_option_cmd)],
