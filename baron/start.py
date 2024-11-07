@@ -9,6 +9,7 @@ from baron.commands.create_event_cmd import set_date, set_place, set_location, o
     finish_create_event, create_event_cmd, DATE, PLACE, LOCATION, ATTENDEES, MIN_ATTENDEES, FINISH_CREATE_EVENT, \
     create_event_callback
 from baron.commands.create_payment import register_handlers
+from baron.commands.help_cmd import help_cmd
 from baron.commands.poll import poll_event, handle_poll_selection
 from baron.commands.start_cmd import start_cmd
 from configs.models import Config, load_config_global
@@ -43,7 +44,7 @@ def main(config: Config = load_config_global()) -> None:
         CallbackQueryHandler(create_event_callback, pattern="mogu"),
         CallbackQueryHandler(create_event_callback, pattern="ne_mogu"),
         CommandHandler("cancel_event", cancel_event_cmd),
-
+        CommandHandler("help", help_cmd),
         CommandHandler("poll", poll_event),
         CallbackQueryHandler(handle_poll_selection, pattern='^.*$')
     ]
