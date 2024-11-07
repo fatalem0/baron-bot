@@ -4,7 +4,8 @@ from telegram.constants import ParseMode
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
-from baron.models import Events, UsersEvents, Users
+from baron.models import Events, UsersEvents, Users, EventOptions
+from baron.users import find_user_by_id
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -32,10 +33,15 @@ async def approve_event_if_has_min_attendees(context: ContextTypes.DEFAULT_TYPE)
             logger.info(f'approve_event_if_has_min_attendees attendees - {attendees}')
 
             try:
+                event_options = EventOptions.get_or_none(EventOptions.event_id == event.id)
+                event_author_name = find_user_by_id(event.author_id)
+
                 sent_to_others_message = (
                     f"✅Событие '{event.name}' согласовано!\n"
-                    # f"📍Место - {found_event.}\n"
-                    # f"🕒Время - {event_date}\n"
+                    f"🏆Организатор события - {event_author_name}\n"
+                    f"📍Место - {event_options.place}\n"
+                    f"📌Адрес - {event.latitude}, {event.longitude}\n"
+                    f"🕒Время - {event_options.date}\n"
                     f"🫂Участники - {attendees_with_at_symbol}\n"
                 )
 

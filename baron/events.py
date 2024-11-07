@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 def create_event(
         event_author_id,
+        event_author_name,
         event_name,
         event_date,
         event_place,
@@ -28,6 +29,7 @@ def create_event(
         """
         Пытаемся создать ивент
         event_author_id = %s,
+        event_author_name = %s,
         event_name = %s,
         event_date = %s,
         event_place = %s,
@@ -37,6 +39,7 @@ def create_event(
         event_longitude = %s
         """,
         event_author_id,
+        event_author_name,
         event_name,
         event_date,
         event_place,
@@ -62,6 +65,12 @@ def create_event(
                 author_id=event_author_id
             )
             logger.info('Создана запись в таблице event_options')
+
+            UsersEvents.create(
+                user_id=event_author_id,
+                event_id=new_event.id
+            )
+            logger.info(f'Инициатор с ID = {event_author_id} события {event_name} добавлен в таблицу users_events')
 
             found_attendees = []
             for attendee in event_attendees:

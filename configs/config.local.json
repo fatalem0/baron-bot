@@ -1,6 +1,6 @@
 {
   "telegram": {
-    "token": "7755010868:AAHq4MoVsoeHM1_XcVBV9m8tbnQcJppsvHI"
+    "token": "LOCAL_TG_TOKEN"
   },
   "2gis": {
     "token": "b3db9811-4a90-434e-9ff9-667cf852bfc3"

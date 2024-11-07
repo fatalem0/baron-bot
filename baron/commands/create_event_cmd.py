@@ -19,20 +19,33 @@ DATE, PLACE, LOCATION, ATTENDEES, MIN_ATTENDEES, FINISH_CREATE_EVENT = range(6)
 
 
 async def create_event_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Захотели собраться? А что за повод-то?")
+    user_id = update.effective_user.id
+    username = update.effective_user.username
+    found_user = find_user_by_id(user_id)
 
-    context.chat_data['is_group'] = update.message.chat.type != 'private'
+    if not found_user:
+        msg = (
+            "Неплохая попытка, но ты не можешь вызвать эту команду!\n"
+            "Сначала мне нужно тебя запомнить - пропиши команду /start\n"
+        )
+        await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)
+        return ConversationHandler.END
+
+    context.user_data['event_author_id'] = user_id
+    context.user_data['event_author_name'] = username
+
+    await update.message.reply_text(text="Захотели собраться? А что за повод-то?")
 
     return DATE
 
 
 async def set_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.chat_data['event_name'] = update.message.text
+    context.user_data['event_name'] = update.message.text
 
     logger.info(
         "Пользователь %s создает мероприятие под названием '%s'",
-        update.message.from_user.username,
-        context.chat_data['event_name']
+        context.user_data['event_author_name'],
+        context.user_data['event_name']
     )
 
     await update.message.reply_text(
@@ -43,13 +56,13 @@ async def set_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def set_place(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.chat_data['event_date'] = update.message.text
+    context.user_data['event_date'] = update.message.text
 
     logger.info(
         "Пользователь %s выбрал дату мероприятия '%s' - %s",
-        update.message.from_user.username,
-        context.chat_data['event_name'],
-        context.chat_data['event_date']
+        context.user_data['event_author_name'],
+        context.user_data['event_name'],
+        context.user_data['event_date']
     )
 
     await update.message.reply_text(
@@ -60,63 +73,65 @@ async def set_place(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def set_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.chat_data['event_place'] = update.message.text
+    context.user_data['event_place'] = update.message.text
 
     logger.info(
-        "Пользователь %s выбрал название мероприятия '%s' - %s",
-        update.message.from_user.username,
-        context.chat_data['event_name'],
-        context.chat_data['event_place']
+        "Пользователь %s выбрал место мероприятия '%s' - %s",
+        context.user_data['event_author_name'],
+        context.user_data['event_name'],
+        context.user_data['event_place']
     )
 
     await update.message.reply_text(
         "Какой-какой адрес говоришь?"
     )
 
-    if context.chat_data['is_group']:
-        chat_id = update.message.chat_id
-        chat_members = await context.bot.getChatMembers(chat_id)
-        chat_members_usernames = [member.user.username for member in chat_members]
-        context.chat_data['event_attendees'] = chat_members_usernames
-        return MIN_ATTENDEES
-    else:
-        return ATTENDEES
+    return ATTENDEES
 
 
-async def opt_set_attendees(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def set_attendees(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.location:
         await update.message.reply_text(
             "Мне нужна гео-точка(\nКакой-какой адрес говоришь?"
         )
         return ATTENDEES
 
-    context.chat_data['event_latitude'] = update.message.location.latitude
-    context.chat_data['event_longitude'] = update.message.location.longitude
+    context.user_data['event_latitude'] = update.message.location.latitude
+    context.user_data['event_longitude'] = update.message.location.longitude
 
     logger.info(
         "Пользователь %s выбрал место мероприятия '%s' - %s, %s",
-        update.message.from_user.username,
-        context.chat_data['event_name'],
-        context.chat_data['event_latitude'],
-        context.chat_data['event_longitude'],
+        context.user_data['event_author_name'],
+        context.user_data['event_name'],
+        context.user_data['event_latitude'],
+        context.user_data['event_longitude'],
     )
 
     await update.message.reply_text(
-        "Кого позовёте? Напишите имена пользователей, каждое с новой строки"
+        "Кого позовёте? Напишите имена пользователей"
     )
 
     return MIN_ATTENDEES
 
 
 async def set_min_attendees(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not context.chat_data.get('event_attendees', False):
-        context.chat_data['event_attendees'] = update.message.text.strip().split()
+    context.user_data['event_attendees'] = list(set(update.message.text.strip().split()))
+    # context.user_data['event_attendees'] = \
+    #     [attendee for attendee in list(set(update.message.text.strip().split())) if
+    #      attendee != context.user_data['event_author_name']]
+
+    if not context.user_data.get('event_attendees', []):
+        await update.message.reply_text(
+            "Давай, не стесняйся, напиши хотя бы кого-нибудь еще"
+        )
+
+        return MIN_ATTENDEES
 
     logger.info(
         "Пользователь %s выбрал участников мероприятия '%s' - %s",
-        update.message.from_user.username,
-        context.chat_data['event_name'],
-        context.chat_data['event_attendees']
+        context.user_data['event_author_name'],
+        context.user_data['event_name'],
+        context.user_data['event_attendees']
     )
 
     await update.message.reply_text(
@@ -127,21 +142,20 @@ async def set_min_attendees(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def finish_create_event(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    event_author_name = update.message.from_user.username
-    user_id = update.effective_user.id
-
-    event_author_id = find_user_by_id(user_id)
-    event_name = context.chat_data['event_name']
-    event_date = context.chat_data['event_date']
-    event_place = context.chat_data['event_place']
-    event_attendees = context.chat_data['event_attendees']
-    event_latitude = context.chat_data['event_latitude']
-    event_longitude = context.chat_data['event_longitude']
+    event_author_id = context.user_data['event_author_id']
+    event_author_name = context.user_data['event_author_name']
+    event_name = context.user_data['event_name']
+    event_date = context.user_data['event_date']
+    event_place = context.user_data['event_place']
+    event_attendees = context.user_data['event_attendees']
+    event_latitude = context.user_data['event_latitude']
+    event_longitude = context.user_data['event_longitude']
 
     event_min_attendees = update.message.text
 
     new_event_id, found_attendees = create_event(
         event_author_id,
+        event_author_name,
         event_name,
         event_date,
         event_place,
@@ -176,6 +190,7 @@ async def finish_create_event(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     finish_msg = (
         f"Готово! ID вашего события - {new_event_id}\n"
+        f"🏆Организатор события - {event_author_name}\n"
         f"📢Событие - {event_name}\n"
         f"📍Место - {event_place}\n"
         f"📌Адрес - {event_latitude}, {event_longitude}\n"
@@ -189,6 +204,7 @@ async def finish_create_event(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     sent_to_others_message = (
         f"Привет! {event_author_name} приглашает тебя на новое событие\n"
+        f"🏆Организатор события - {event_author_name}\n"
         f"📢Событие - {event_name}\n"
         f"📍Место - {event_place}\n"
         f"🕒Время - {event_date}\n"
@@ -234,18 +250,21 @@ async def create_event_callback(update: Update, context: ContextTypes.DEFAULT_TY
     await query.answer()
 
     action = query.data
+    user_id = query.from_user.id
     username = query.from_user.username
     logger.info(f'Ответ от пользователя {username} для команды create_event = {action}')
 
     if action == 'mogu':
-        await update.effective_message.edit_text("Вы подтвердили участие!")
+        await context.bot.send_message(chat_id=user_id, text="Вы подтвердили участие!")
         # TODO: Здесь можно добавить логику для обработки подтверждения участия
     elif action == 'ne_mogu':
-        await update.effective_message.edit_text("Сорян(")
+        await context.bot.send_message(chat_id=user_id, text="Жаль( Ждем в следующий раз")
 
         found_user = find_user_by_username(username)
         if found_user:
             found_user_id = found_user.id
             delete_user_from_event(found_user_id)
         else:
-            await update.effective_message.edit_text("Не нашли тебя в БД, сорян(")
+            await context.bot.send_message(chat_id=user_id, text="Не нашли тебя в БД, сорян(")
+
+    await update.effective_message.edit_reply_markup(reply_markup=None)
