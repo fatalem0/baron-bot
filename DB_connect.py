@@ -11,8 +11,7 @@ class DB:
             dbname="baron",
             user="itmo",
             password="baron-itmo",
-            target_session_attrs="read-write",
-            sslrootcert=conf.sslrootcert
+            target_session_attrs="read-write"
         )
 
     def get_conn(self):
