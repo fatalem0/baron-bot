@@ -1,6 +1,6 @@
-drop schema ilatypov_test cascade;
-create schema ilatypov_test;
-set search_path to ilatypov_test;
+drop schema baron cascade;
+create schema baron;
+set search_path to baron;
 
 CREATE type "status" AS ENUM (
     'pending',

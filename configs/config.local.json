@@ -1,12 +1,12 @@
 {
   "telegram": {
-    "token": "7296816132:AAHYg2iTg1hrn58_Rr21kTzYRFVQChn40Xo"
+    "token": "LOCAL_TG_TOKEN"
   },
   "2gis": {
     "token": "b3db9811-4a90-434e-9ff9-667cf852bfc3"
   },
   "db": {
-    "sslrootcert": "/Users/ilatypov/.postgresql/root.crt",
-    "schema": "ilatypov_test"
+    "sslrootcert": "LOCAL_PATH",
+    "schema": "LOCAL_SCHEMA"
   }
 }
