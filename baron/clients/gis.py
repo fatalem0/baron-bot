@@ -9,7 +9,7 @@ from configs.models import Config
 @dataclasses.dataclass
 class BuildingItem:
     address_comment: Optional[str]
-    address_name: str
+    address_name: Optional[str]
     id: str
     name: str
 
@@ -41,7 +41,7 @@ class GisAPI:
         return [
             BuildingItem(
                 address_comment=item.get('address_comment'),
-                address_name=item['address_name'],
+                address_name=item.get('address_name'),
                 id=item['id'],
                 name=item['name'],
             ) for item in items
