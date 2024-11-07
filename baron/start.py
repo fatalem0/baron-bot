@@ -11,6 +11,8 @@ from baron.commands.create_event_cmd import set_date, set_place, set_location, o
 from baron.commands.create_payment import register_handlers
 from baron.commands.help_cmd import help_cmd
 from baron.commands.poll import poll_event, handle_poll_answer
+from baron.commands import help_cmd
+from baron.commands.poll import poll_event
 from baron.commands.start_cmd import start_cmd
 from configs.models import Config, load_config_global
 
@@ -48,7 +50,7 @@ def main(config: Config = load_config_global()) -> None:
         CommandHandler("help", help_cmd),
 
         CommandHandler("poll", poll_event),
-        PollAnswerHandler(handle_poll_answer)
+        #PollAnswerHandler(handle_poll_answer)
     ]
 
     for handler in handlers:
