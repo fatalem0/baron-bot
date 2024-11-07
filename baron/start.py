@@ -5,13 +5,11 @@ from telegram.ext import Application, CommandHandler, ConversationHandler, Messa
     CallbackQueryHandler
 
 from baron.commands.cancel_event_cmd import cancel_event_cmd
-from baron.commands.create_payment import create_payment, handle_buttons, photo_handler, \
-    button_handler
-from baron.commands.help_cmd import help_cmd
 from baron.commands.create_event_cmd import set_date, set_place, set_location, opt_set_attendees, set_min_attendees, \
     finish_create_event, create_event_cmd, DATE, PLACE, LOCATION, ATTENDEES, MIN_ATTENDEES, FINISH_CREATE_EVENT, \
     create_event_callback
-
+from baron.commands.create_payment import register_handlers
+from baron.commands.help_cmd import help_cmd
 from baron.commands.poll import poll_event, handle_poll_answer
 from baron.commands.start_cmd import start_cmd
 from configs.models import Config, load_config_global
@@ -49,15 +47,12 @@ def main(config: Config = load_config_global()) -> None:
         CommandHandler("help", help_cmd),
 
         CommandHandler("poll", poll_event),
-        PollAnswerHandler(handle_poll_answer),
-
-        CommandHandler("create_payment", create_payment),
-        MessageHandler(filters.TEXT & filters.ChatType.GROUPS, handle_buttons),
-        MessageHandler(filters.PHOTO & filters.ChatType.GROUPS, photo_handler),
-        CallbackQueryHandler(button_handler, pattern='button_clicked')
+        PollAnswerHandler(handle_poll_answer)
     ]
 
     for handler in handlers:
         application.add_handler(handler)
+
+    register_handlers(application)
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)
