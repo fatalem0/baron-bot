@@ -18,7 +18,6 @@ logger = logging.getLogger(__name__)
 OPTION_DATE, OPTION_PLACE, FINISH_CREATE_OPTION = range(3)
 
 
-
 async def add_option_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text("Пожалуйста, укажите event_id.")
@@ -43,7 +42,6 @@ async def add_option_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.chat_data['is_group'] = update.message.chat.type != 'private'
 
     return OPTION_DATE
-
 
 
 async def set_option_date(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -86,7 +84,6 @@ async def set_option_place(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     logger.info("Опция %s добавлена", new_option_id)
-
 
     attendees = get_event_members(event_id)
     found_attendee_with_bot_chat_ids = [found_attendee.with_bot_chat_id for found_attendee in attendees]

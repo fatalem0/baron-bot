@@ -150,6 +150,15 @@ def create_option(event_id, option_date, option_place, option_author_id):
         logger.error(f'Error creating event_option with for event with ID {event_id}: {ex}')
 
 
+def delete_event_option_by_id(event_id):
+    logger.info(f'Пытаемся удалить запись с id = {event_id} из таблицы event_options')
+    try:
+        EventOptions.delete().where(EventOptions.id == event_id).execute()
+        logger.info(f'Запись в таблице event_options с ID = {event_id} удалена')
+    except IntegrityError as ex:
+        logger.error(f'Ошибка при удалении записи с ID = {event_id} из таблицы event_options: {ex}')
+
+
 def get_event_members(event_id):
     try:
         user_ids = UsersEvents.select(UsersEvents.user_id).where(UsersEvents.event_id == event_id)

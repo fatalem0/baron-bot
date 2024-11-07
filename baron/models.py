@@ -24,6 +24,7 @@ class BaseModel(Model):
         database = db
         schema = load_config_global().schema
 
+
 class Users(BaseModel):
     id = IntegerField(primary_key=True)
     username = CharField(unique=True)
@@ -73,4 +74,5 @@ class UserOption(BaseModel):
         table_name = 'users_options'
         primary_key = CompositeKey('user_id', 'option_id')
 
-db.bind([Users, Events, UsersEvents , EventOptions, UserOption], bind_refs=False, bind_backrefs=False)
+
+db.bind([Users, Events, UsersEvents, EventOptions, UserOption], bind_refs=False, bind_backrefs=False)
