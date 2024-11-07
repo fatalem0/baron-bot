@@ -1,9 +1,11 @@
 import logging
+from datetime import datetime
+from idlelib import query
 
 from peewee import Update, Model, CharField, ForeignKeyField, DateTimeField, PostgresqlDatabase, IntegrityError, \
-    BigIntegerField, SQL
+    BigIntegerField, SQL, fn
 from requests import options
-from telegram import ReplyKeyboardMarkup, KeyboardButton
+from telegram import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext, CommandHandler, MessageHandler
 import DB_connect
 from baron.models import db
@@ -22,10 +24,10 @@ if db.is_closed():
     db.connect()
     db.execute_sql('SET search_path TO petrenko_test')
 
-# Модели для таблиц events и event_options
+
+# Модели для таблиц events, event_options и users_poll
 class Event(Model):
     id = CharField(primary_key=True)  # ID события
-    author_id = CharField()
     name = CharField()
     min_attendees = CharField()
     created_at = DateTimeField()
@@ -35,27 +37,27 @@ class Event(Model):
         database = db  # Подключение к базе данных
         db_table = 'events'  # Указываем имя таблицы
 
+
 class EventOption(Model):
     event = ForeignKeyField(Event, backref='options')  # Внешний ключ на событие
     date = DateTimeField()
     place = CharField()
     place_link = CharField(null=True)
     created_at = DateTimeField()
-    author_id = CharField()
 
     class Meta:
         database = db  # Подключение к базе данных
         db_table = 'event_options'  # Указываем имя таблицы
 
-# Модель для таблицы users_poll
+
 class UserPoll(Model):
-    user_id = BigIntegerField()  # ID пользователя (например, ID Telegram)
+    user_id = BigIntegerField(primary_key=True)  # ID пользователя (например, ID Telegram)
     event_option_id = BigIntegerField()  # ID выбранного варианта (ссылка на event_options)
     status = CharField(default='pending')  # Статус выбора (например, "confirmed", "declined", "pending")
 
     class Meta:
         database = db  # Подключение к базе данных
-        db_table = 'users_poll' # Имя таблицы в базе данных
+        db_table = 'users_poll'  # Имя таблицы в базе данных
 
     @classmethod
     def create_or_update(cls, user_id, event_option_id, status='pending'):
@@ -66,105 +68,133 @@ class UserPoll(Model):
             user_poll.save()
         return user_poll
 
+
 # Обработчик команды /poll {id}
 async def poll_event(update: Update, context: CallbackContext):
     if not context.args:
         await update.message.reply_text("Пожалуйста, укажите ID события, например: /poll 123")
         return
 
-    event_id = context.args[0]
-    user_id = update.message.from_user.id  # Получаем ID пользователя, который вызвал команду
+    try:
+        event_id = int(context.args[0])  # Преобразуем event_id в целое число для безопасности
+    except ValueError:
+        await update.message.reply_text("Неверный формат ID события. Пожалуйста, используйте целое число.")
+        return
+
+    user_id = update.message.from_user.id  # Получаем ID пользователя
 
     try:
         # Получаем событие по ID
         event = Event.get_or_none(Event.id == event_id)
-
         if not event:
             await update.message.reply_text(f"Событие с ID {event_id} не найдено.")
             return
 
-        # Получаем все варианты для этого события
+        # Получаем все варианты для события
         options = EventOption.select().where(EventOption.event == event)
-
         if not options.exists():
             await update.message.reply_text("Для указанного события нет доступных вариантов.")
             return
 
         # Формируем информацию о событии
-        event_info = f"Событие: {event.name}\nМинимальное количество участников: {event.min_attendees}\nСтатус: {event.status_id}\nДата начала: {event.created_at}"
+        event_info = f"Событие: {event.name}\nМинимальное количество участников: {event.min_attendees}\nСтатус: {event.status_id}\nДата создания: {event.created_at}"
 
-        # Получаем выборы пользователя из таблицы users_poll
-        user_selections = UserPoll.select().where(UserPoll.user_id == user_id, UserPoll.event_option_id.in_([option.id for option in options]))
+        # Получаем выборы пользователя из таблицы UserPoll
+        user_selections = {poll.event_option_id: poll.status for poll in UserPoll.select().where(UserPoll.user_id == user_id)}
 
         # Формируем клавиатуру с вариантами и метками "Выбрано" или "Отменить"
         reply_keyboard = []
         for option in options:
-            # Проверяем, сделал ли пользователь выбор для этого варианта
-            selected = any(selection.event_option_id == option.id for selection in user_selections)
-            button_text = f"{option.place} - {option.date.strftime('%Y-%m-%d %H:%M')}"
-            if selected:
-                button_text += " (Выбрано)"
-            reply_keyboard.append([KeyboardButton(button_text)])
+            # Проверяем статус для этого варианта
+            status = user_selections.get(option.id, "Не выбрано")
+            button_text = f"{option.place} - {option.date.strftime('%Y-%m-%d %H:%M')} ({status})"
+            reply_keyboard.append([InlineKeyboardButton(button_text, callback_data=f"{option.id}")])
 
         # Добавляем кнопку "Предложить свой вариант"
-        reply_keyboard.append([KeyboardButton("Предложить свой вариант")])
-
-        markup = ReplyKeyboardMarkup(reply_keyboard, resize_keyboard=True, one_time_keyboard=True)
+        reply_keyboard.append([InlineKeyboardButton("Предложить свой вариант", callback_data="new_option")])
 
         # Отправляем информацию о событии и клавиатуру
+        markup = InlineKeyboardMarkup(reply_keyboard)
         await update.message.reply_text(
             f"{event_info}\n\nВыберите один из предложенных вариантов или предложите свой:",
             reply_markup=markup
         )
 
-    except IntegrityError as e:
-        await update.message.reply_text("Ошибка при получении данных из базы.")
-        print(f"Ошибка: {e}")
     except Exception as e:
         await update.message.reply_text("Произошла непредвиденная ошибка.")
-        print(f"Ошибка: {e}")
+        logging.error(f"Ошибка при обработке команды /poll: {e}")
 
 
 async def handle_poll_selection(update: Update, context: CallbackContext):
-    user_id = update.message.from_user.id
-    selection_text = update.message.text
+    # Проверка на callback_query
+    if not update.callback_query:
+        return
 
-    # Проверим, выбрал ли пользователь вариант (смотрим на текст кнопки)
-    if " (Выбрано)" in selection_text:
-        # Если уже выбрано, значит, нужно отменить выбор
-        option_text = selection_text.replace(" (Выбрано)", "")
-        option = EventOption.select().where(
-            EventOption.place + ' - ' + EventOption.date.strftime('%Y-%m-%d %H:%M') == option_text).first()
+    query = update.callback_query
+    user_id = query.from_user.id
+    selection_text = query.data
 
-        if option:
-            try:
-                # Удаляем выбор пользователя из таблицы users_poll
-                UserPoll.delete().where(UserPoll.user_id == user_id, UserPoll.event_option_id == option.id).execute()
-                await update.message.reply_text(
-                    f"Вы отменили выбор: {option.place} - {option.date.strftime('%Y-%m-%d %H:%M')}")
-            except Exception as e:
-                await update.message.reply_text("Ошибка при отмене выбора.")
-                print(f"Ошибка: {e}")
-        else:
-            await update.message.reply_text("Не удалось найти выбранный вариант.")
-    else:
-        # Если еще не выбрано, нужно записать выбор пользователя
-        option_text = selection_text
-        option = EventOption.select().where(
-            EventOption.place + ' - ' + EventOption.date.strftime('%Y-%m-%d %H:%M') == option_text).first()
+    # Обрабатываем нажатие на кнопку "Предложить свой вариант"
+    if selection_text == "new_option":
+        await handle_suggest_option(query)
+        return
 
-        if option:
-            try:
-                # Записываем выбор пользователя в таблицу users_poll
-                UserPoll.create(user_id=user_id, event_option_id=option.id)
-                await update.message.reply_text(
-                    f"Вы выбрали: {option.place} - {option.date.strftime('%Y-%m-%d %H:%M')}")
-            except Exception as e:
-                await update.message.reply_text("Ошибка при записи выбора.")
-                print(f"Ошибка: {e}")
-        else:
-            await update.message.reply_text("Не удалось найти выбранный вариант.")
+    try:
+        # Преобразуем option_id из callback_data
+        option_id = int(selection_text)
+    except ValueError:
+        await query.message.reply_text("Неверный формат кнопки.")
+        return
 
+    # Получаем вариант по ID
+    option = EventOption.get_or_none(EventOption.id == option_id)
+    if not option:
+        await query.message.reply_text(f"Вариант с ID {option_id} не найден.")
+        return
+
+    # Получаем или создаем запись в UserPoll для пользователя и выбранного варианта
+    user_poll, created = UserPoll.get_or_create(user_id=user_id, event_option_id=option_id)
+
+    # Определяем новый статус и текст кнопки в зависимости от текущего статуса
+    if created or user_poll.status == "canceled":
+        user_poll.status = "confirmed"
+        button_text = f"{option.place} - {option.date.strftime('%Y-%m-%d %H:%M')} (Выбрано)"
+        await query.answer(f"Вы подтвердили выбор: {option.place} - {option.date.strftime('%Y-%m-%d %H:%M')}")
+    elif user_poll.status == "confirmed":
+        user_poll.status = "canceled"
+        button_text = f"{option.place} - {option.date.strftime('%Y-%m-%d %H:%M')} (Не выбрано)"
+        await query.answer(f"Вы отменили выбор: {option.place} - {option.date.strftime('%Y-%m-%d %H:%M')}")
+
+    # Сохраняем новый статус
+    user_poll.save()
+
+    # Обновляем кнопки для всех вариантов события
+    event_options = EventOption.select().where(EventOption.event == option.event)
+    inline_keyboard = []
+
+    for opt in event_options:
+        status = "Выбрано" if UserPoll.get_or_none(user_id=user_id, event_option_id=opt.id, status="confirmed") else "Не выбрано"
+        button_text = f"{opt.place} - {opt.date.strftime('%Y-%m-%d %H:%M')} ({status})"
+        inline_keyboard.append([InlineKeyboardButton(text=button_text, callback_data=f"{opt.id}")])
+
+    # Добавляем кнопку "Предложить свой вариант"
+    inline_keyboard.append([InlineKeyboardButton("Предложить свой вариант", callback_data="new_option")])
+
+    # Обновляем разметку с кнопками
+    try:
+        await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard))
+        logging.info("Сообщение обновлено с новой разметкой.")
+    except Exception as e:
+        logging.error(f"Ошибка при обновлении сообщения: {e}")
+
+
+async def handle_suggest_option(query):
+    # Выводим сообщение или предлагаем пользователю что-то
+    await query.message.reply_text("Предложите свой вариант")
+    # Дополнительная логика для предложения варианта
+    logger.info("other variant")
+    await query.answer()
+    return
 # # Функция для получения списка всех зарегистрированных пользователей из базы данных
 # def get_all_users():
 #     db = DB_connect.DB()
