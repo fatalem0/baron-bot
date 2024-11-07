@@ -1,12 +1,12 @@
 {
   "telegram": {
-    "token": "7848117850:AAFGNZYd_8vaV9w4E6dfXY3xPlYhMQxtLhA"
+    "token": "LOCAL_TG_TOKEN"
   },
   "2gis": {
     "token": "b3db9811-4a90-434e-9ff9-667cf852bfc3"
   },
   "db": {
-    "sslrootcert": "C:\\Users\\user\\.postgresql\\root.crt",
-    "schema": "baron"
+    "sslrootcert": "LOCAL_PATH",
+    "schema": "LOCAL_SCHEMA"
   }
 }

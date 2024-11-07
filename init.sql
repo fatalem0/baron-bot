@@ -1,6 +1,6 @@
-drop schema tsyganov_test cascade;
-create schema tsyganov_test;
-set search_path to tsyganov_test;
+drop schema baron cascade;
+create schema baron;
+set search_path to baron;
 
 CREATE type "status" AS ENUM (
     'pending',
@@ -20,7 +20,9 @@ CREATE TABLE "events" (
                           "name" varchar not null,
                           "min_attendees" bigint not null,
                           "created_at" timestamp not null default now(),
-                          "status_id" status
+                          "status_id" status,
+                          "latitude" FLOAT NOT NULL,
+                          "longitude" FLOAT NOT NULL
 );
 
 CREATE TABLE "event_options" (
@@ -40,10 +42,9 @@ CREATE TABLE "users_events" (
 );
 
 CREATE TABLE "users_options" (
-  "user_id" bigint NOT NULL,
-  "option_id" bigint NOT NULL,
-  "match" bool
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    option_id BIGINT NOT NULL,
+    status VARCHAR DEFAULT 'pending',
+    PRIMARY KEY (user_id, option_id),
+    FOREIGN KEY (option_id) REFERENCES event_options(id)
 );
-
-ALTER TABLE "users_options" ADD FOREIGN KEY ("option_id") REFERENCES "event_options" ("id");
-ALTER TABLE "users_options" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");

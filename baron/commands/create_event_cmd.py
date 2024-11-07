@@ -15,7 +15,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
-DATE, PLACE, ATTENDEES, MIN_ATTENDEES, FINISH_CREATE_EVENT = range(5)
+DATE, PLACE, LOCATION, ATTENDEES, MIN_ATTENDEES, FINISH_CREATE_EVENT = range(6)
 
 
 async def create_event_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -53,7 +53,24 @@ async def set_place(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     await update.message.reply_text(
-        "Где соберётесь?"
+        "И где же решили собираться?"
+    )
+
+    return LOCATION
+
+
+async def set_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.chat_data['event_place'] = update.message.text
+
+    logger.info(
+        "Пользователь %s выбрал название мероприятия '%s' - %s",
+        update.message.from_user.username,
+        context.chat_data['event_name'],
+        context.chat_data['event_place']
+    )
+
+    await update.message.reply_text(
+        "Какой-какой адрес говоришь?"
     )
 
     if context.chat_data['is_group']:
@@ -67,13 +84,21 @@ async def set_place(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def opt_set_attendees(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    context.chat_data['event_place'] = update.message.text
+    if not update.message.location:
+        await update.message.reply_text(
+            "Мне нужна гео-точка(\nКакой-какой адрес говоришь?"
+        )
+        return ATTENDEES
+
+    context.chat_data['event_latitude'] = update.message.location.latitude
+    context.chat_data['event_longitude'] = update.message.location.longitude
 
     logger.info(
-        "Пользователь %s выбрал место мероприятия '%s' - %s",
+        "Пользователь %s выбрал место мероприятия '%s' - %s, %s",
         update.message.from_user.username,
         context.chat_data['event_name'],
-        context.chat_data['event_place']
+        context.chat_data['event_latitude'],
+        context.chat_data['event_longitude'],
     )
 
     await update.message.reply_text(
@@ -110,6 +135,9 @@ async def finish_create_event(update: Update, context: ContextTypes.DEFAULT_TYPE
     event_date = context.chat_data['event_date']
     event_place = context.chat_data['event_place']
     event_attendees = context.chat_data['event_attendees']
+    event_latitude = context.chat_data['event_latitude']
+    event_longitude = context.chat_data['event_longitude']
+
     event_min_attendees = update.message.text
 
     new_event_id, found_attendees = create_event(
@@ -118,7 +146,9 @@ async def finish_create_event(update: Update, context: ContextTypes.DEFAULT_TYPE
         event_date,
         event_place,
         event_attendees,
-        event_min_attendees
+        event_min_attendees,
+        event_latitude,
+        event_longitude
     )
 
     found_attendees_with_at_symbol = ', '.join(['@' + found_attendee.username for found_attendee in found_attendees])
@@ -148,6 +178,7 @@ async def finish_create_event(update: Update, context: ContextTypes.DEFAULT_TYPE
         f"Готово! ID вашего события - {new_event_id}\n"
         f"📢Событие - {event_name}\n"
         f"📍Место - {event_place}\n"
+        f"📌Адрес - {event_latitude}, {event_longitude}\n"
         f"🕒Время - {event_date}\n"
         f"🫂Приглашенные участники - {found_attendees_with_at_symbol}\n"
         f"Минимальное количество человек - {event_min_attendees}\n"

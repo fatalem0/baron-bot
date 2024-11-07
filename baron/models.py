@@ -2,8 +2,9 @@ from peewee import (
     CharField,
     ForeignKeyField,
     IntegerField,
+    FloatField,
     Model,
-    PostgresqlDatabase, Check, DateTimeField, SQL, CompositeKey, BooleanField,
+    PostgresqlDatabase, Check, DateTimeField, SQL, CompositeKey, BigIntegerField,
 )
 
 from configs.models import load_config_global
@@ -14,8 +15,7 @@ db = PostgresqlDatabase(
     password="baron-itmo",
     host='c-c9qhi5jpif1h5cqvlh32.rw.mdb.yandexcloud.net',
     port="6432",
-    sslmode="verify-full",
-    sslrootcert=load_config_global().sslrootcert
+    sslmode="verify-full"
 )
 
 
@@ -31,14 +31,18 @@ class Users(BaseModel):
 
 
 class Events(BaseModel):
+    id = IntegerField(primary_key=True)
     author_id = ForeignKeyField(Users, backref="events")
     name = CharField()
     min_attendees = IntegerField(constraints=[Check('min_attendees > 1')])
     created_at = DateTimeField(constraints=[SQL('DEFAULT CURRENT_TIMESTAMP')])
     status_id = CharField(null=True)
+    latitude = FloatField()
+    longitude = FloatField()
 
 
 class EventOptions(BaseModel):
+    id = IntegerField(primary_key=True)
     event_id = ForeignKeyField(Events, backref="event_options", on_delete='CASCADE')
     date = CharField()
     place = CharField()
@@ -60,9 +64,13 @@ class UsersEvents(BaseModel):
         primary_key = CompositeKey('user_id', 'event_id')
 
 
-class UsersOptions(BaseModel):
-    user = ForeignKeyField(Users, backref='userOptions', on_delete='CASCADE')
-    option = ForeignKeyField(EventOptions, backref='optionUsers', on_delete='CASCADE')
-    match = BooleanField()
+class UserOption(BaseModel):
+    user_id = ForeignKeyField(Users, backref='userOptions', on_delete='CASCADE')
+    option_id = ForeignKeyField(EventOptions, backref='optionUsers', on_delete='CASCADE')
+    status = CharField(default='pending')  # Статус выбора (например, "confirmed", "declined", "pending")
 
-db.bind([Users, Events, UsersEvents , EventOptions, UsersOptions], bind_refs=False, bind_backrefs=False)
+    class Meta:
+        table_name = 'users_options'
+        primary_key = CompositeKey('user_id', 'option_id')
+
+db.bind([Users, Events, UsersEvents , EventOptions, UserOption], bind_refs=False, bind_backrefs=False)
