@@ -10,10 +10,7 @@ from baron.commands.create_event_cmd import set_date, set_place, set_location, o
     create_event_callback
 from baron.commands.create_payment import register_handlers
 from baron.commands.help_cmd import help_cmd
-from baron.commands.poll import poll_event, handle_poll_answer
 from baron.commands import help_cmd
-from baron.commands.create_event_cmd import set_date, set_place, opt_set_attendees, set_min_attendees, \
-    finish_create_event, create_event_cmd, DATE, PLACE, ATTENDEES, MIN_ATTENDEES, FINISH_CREATE_EVENT
 from baron.commands.poll import poll_event, handle_poll_selection
 from baron.commands.start_cmd import start_cmd
 from configs.models import Config, load_config_global
