@@ -1,5 +1,2 @@
 .idea
-baron/__pycache__/*
-baron/commands/__pycache__/*
-__pycache__/*
-configs/__pycache__/*
+*__pycache__*
