@@ -26,7 +26,7 @@ class GisAPI:
             params={
                 'key': self.key,
                 'q': prompt,
-                'sort_point': f'{lat},{lon}',
+                'sort_point': f'{lon},{lat}',
             },
             verify=False,
         )
