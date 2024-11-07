@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime
-from idlelib import query
 
 from peewee import Update, Model, CharField, ForeignKeyField, DateTimeField, PostgresqlDatabase, IntegrityError, \
     BigIntegerField, SQL, fn

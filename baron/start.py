@@ -11,6 +11,7 @@ from baron.commands.create_event_cmd import set_date, set_place, set_location, o
 from baron.commands.create_payment import register_handlers
 from baron.commands.help_cmd import help_cmd
 from baron.commands import help_cmd
+from baron.commands.nearby_cmd import nearby_change_handler
 from baron.commands.poll import poll_event, handle_poll_selection
 from baron.commands.start_cmd import start_cmd
 from configs.models import Config, load_config_global
@@ -44,12 +45,13 @@ def main(config: Config = load_config_global()) -> None:
         ),
         CallbackQueryHandler(create_event_callback, pattern="mogu"),
         CallbackQueryHandler(create_event_callback, pattern="ne_mogu"),
+        nearby_change_handler(),
         CommandHandler("cancel_event", cancel_event_cmd),
 
         CommandHandler("help", help_cmd),
 
         CommandHandler("poll", poll_event),
-        CallbackQueryHandler(handle_poll_selection, pattern='^.*$')    ]
+        CallbackQueryHandler(handle_poll_selection, pattern='^.*$')]
 
     for handler in handlers:
         application.add_handler(handler)
