@@ -50,7 +50,7 @@ async def poll_event(update: Update, context: CallbackContext):
             return
 
         # Формируем информацию о событии
-        event_info = f"Событие: {event.name}\nМинимальное количество участников: {event.min_attendees}\nСтатус: {event.status_id}\nДата создания: {event.created_at}"
+        event_info = f"Событие: {event.name}\nМинимальное количество участников: {event.min_attendees}\nДата создания: {event.created_at}"
 
         # Получаем выборы пользователя, это будут объекты UserOption, а не просто их ID
         user_selections = UserOption.select().where(UserOption.user_id == user_id,
