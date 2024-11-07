@@ -20,7 +20,7 @@ CREATE TABLE "events" (
                           "name" varchar not null,
                           "min_attendees" bigint not null,
                           "created_at" timestamp not null default now(),
-                          "status_id" status,
+                          "status_id" status not null default 'pending',
                           "latitude" FLOAT NOT NULL,
                           "longitude" FLOAT NOT NULL
 );

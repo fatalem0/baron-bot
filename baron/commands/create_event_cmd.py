@@ -110,7 +110,7 @@ async def opt_set_attendees(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def set_min_attendees(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.chat_data.get('event_attendees', False):
-        context.chat_data['event_attendees'] = update.message.text.strip().split('\n')
+        context.chat_data['event_attendees'] = update.message.text.strip().split()
 
     logger.info(
         "Пользователь %s выбрал участников мероприятия '%s' - %s",

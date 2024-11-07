@@ -5,13 +5,13 @@ from baron.models import Events
 from baron.clients.gis import GisAPI
 from configs.models import load_config_global
 
-CHANGE = range(1)
+CHANGE = 777
 
 
 def make_adv_buttons(event_id: int, prompt: str = "Бар"):
     event: Events = Events.get_by_id(event_id)
     gis = GisAPI(load_config_global())
-    items = gis.adv(lat=event.latitude, lon=event.longitude)
+    items = gis.adv(lat=event.latitude, lon=event.longitude, prompt=prompt)
 
     return [[InlineKeyboardButton(item.name, callback_data='nearby_address')]
             for item in items]
@@ -24,9 +24,9 @@ async def reply_adv_buttons(update: Update, context: CallbackContext):
     change_button = [InlineKeyboardButton("Изменить поиск", callback_data='change_nearby_prompt')]
     keyboard = adv_buttons + [change_button]
 
-    text = "У меня есть для тебя несколько вариантов" if adv_buttons else "Это плохое место, я не смог найти тут ничего"
+    text = "Подобрал вот такие варианты" if adv_buttons else "Это плохое место, я не смог найти тут ничего"
 
-    await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard))
+    await update.effective_chat.send_message(text, reply_markup=InlineKeyboardMarkup(keyboard))
 
 
 async def change_nearby_prompt_button(update: Update, context: CallbackContext):
@@ -47,11 +47,13 @@ async def init_nearby_handler(event_id: int, update: Update, context: CallbackCo
     await reply_adv_buttons(update, context)
 
 
-def nearby_change_handler():
-    return ConversationHandler(
-        entry_points=[CallbackQueryHandler(change_nearby_prompt_button, pattern='change_nearby_prompt')],
-        states={
-            CHANGE: [MessageHandler(filters.TEXT, change_nearby_prompt_handler)]
-        },
-        fallbacks=[]
-    )
+def nearby_change_handlers():
+    return [
+        ConversationHandler(
+            entry_points=[CallbackQueryHandler(change_nearby_prompt_button, pattern='change_nearby_prompt')],
+            states={
+                CHANGE: [MessageHandler(filters.TEXT, change_nearby_prompt_handler)]
+            },
+            fallbacks=[]
+        )
+    ]
