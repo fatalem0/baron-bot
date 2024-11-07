@@ -13,7 +13,7 @@ def make_adv_buttons(event_id: int, prompt: str = "Бар"):
     gis = GisAPI(load_config_global())
     items = gis.adv(lat=event.latitude, lon=event.longitude)
 
-    return [InlineKeyboardButton(item.name, callback_data='nearby_address')
+    return [[InlineKeyboardButton(item.name, callback_data='nearby_address')]
             for item in items]
 
 
@@ -21,8 +21,8 @@ async def reply_adv_buttons(update: Update, context: CallbackContext):
     event_id = context.user_data['event_id']
     prompt = context.user_data['prompt']
     adv_buttons = make_adv_buttons(event_id, prompt)
-    change_button = InlineKeyboardButton("Изменить поиск", callback_data='change_nearby_prompt')
-    keyboard = [adv_buttons + [change_button]]
+    change_button = [InlineKeyboardButton("Изменить поиск", callback_data='change_nearby_prompt')]
+    keyboard = adv_buttons + [change_button]
 
     text = "У меня есть для тебя несколько вариантов" if adv_buttons else "Это плохое место, я не смог найти тут ничего"
 

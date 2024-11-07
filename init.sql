@@ -42,10 +42,9 @@ CREATE TABLE "users_events" (
 );
 
 CREATE TABLE "users_options" (
-  "user_id" bigint NOT NULL,
-  "option_id" bigint NOT NULL,
-  "match" bool
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    option_id BIGINT NOT NULL,
+    status VARCHAR DEFAULT 'pending',
+    PRIMARY KEY (user_id, event_option_id),
+    FOREIGN KEY (event_option_id) REFERENCES event_options(id)
 );
-
-ALTER TABLE "users_options" ADD FOREIGN KEY ("option_id") REFERENCES "event_options" ("id");
-ALTER TABLE "users_options" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
