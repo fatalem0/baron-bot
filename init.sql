@@ -45,6 +45,6 @@ CREATE TABLE "users_options" (
     user_id BIGINT NOT NULL REFERENCES users(id),
     option_id BIGINT NOT NULL,
     status VARCHAR DEFAULT 'pending',
-    PRIMARY KEY (user_id, event_option_id),
-    FOREIGN KEY (event_option_id) REFERENCES event_options(id)
+    PRIMARY KEY (user_id, option_id),
+    FOREIGN KEY (option_id) REFERENCES event_options(id)
 );
