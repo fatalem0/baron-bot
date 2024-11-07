@@ -34,11 +34,11 @@ async def approve_event_if_has_min_attendees(context: ContextTypes.DEFAULT_TYPE)
 
             try:
                 event_options = EventOptions.get_or_none(EventOptions.event_id == event.id)
-                event_author_name = find_user_by_id(event.author_id)
+                event_author: Users = find_user_by_id(event.author_id)
 
                 sent_to_others_message = (
                     f"✅Событие '{event.name}' согласовано!\n"
-                    f"🏆Организатор события - {event_author_name}\n"
+                    f"🏆Организатор события - {event_author.username}\n"
                     f"📍Место - {event_options.place}\n"
                     f"📌Адрес - {event.latitude}, {event.longitude}\n"
                     f"🕒Время - {event_options.date}\n"
