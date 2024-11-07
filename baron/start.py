@@ -1,11 +1,13 @@
 import logging
 
 from telegram import Update
-from telegram.ext import Application, CommandHandler, ConversationHandler, MessageHandler, filters, PollAnswerHandler, \
+from telegram.ext import Application, CommandHandler, ConversationHandler, MessageHandler, filters, \
     CallbackQueryHandler
 
 from baron.commands.add_option import add_option_cmd, FINISH_CREATE_OPTION, OPTION_DATE, OPTION_PLACE, set_option_date, \
     set_option_place
+from baron.background_jobs.start_background_jobs import start_background_jobs
+from baron.commands.approve_event_cmd import approve_event_cmd
 from baron.commands.cancel_event_cmd import cancel_event_cmd
 from baron.commands.create_event_cmd import set_date, set_place, set_location, opt_set_attendees, set_min_attendees, \
     finish_create_event, create_event_cmd, DATE, PLACE, LOCATION, ATTENDEES, MIN_ATTENDEES, FINISH_CREATE_EVENT, \
@@ -48,6 +50,7 @@ def main(config: Config = load_config_global()) -> None:
         CallbackQueryHandler(create_event_callback, pattern="mogu"),
         CallbackQueryHandler(create_event_callback, pattern="ne_mogu"),
 
+        CommandHandler("approve_event", approve_event_cmd),
         CommandHandler("cancel_event", cancel_event_cmd),
         CommandHandler("help", help_cmd),
         CommandHandler("poll", poll_event),
@@ -62,11 +65,12 @@ def main(config: Config = load_config_global()) -> None:
             fallbacks=[]
         ),
     ]
-    register_handlers(application)
 
     for handler in handlers:
         application.add_handler(handler)
 
+    register_handlers(application)
 
+    application.post_init = start_background_jobs
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)

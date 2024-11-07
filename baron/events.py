@@ -83,6 +83,17 @@ def create_event(
         logger.error(f'Ошибка при создании ивента: {ex}')
 
 
+def find_event_by_id(event_id):
+    event = Events.get_or_none(Events.id == event_id)
+
+    if event is None:
+        logger.error(f"Событие с ID = {event_id} не найдено")
+    else:
+        logger.info(f"Событие с ID = {event_id} найдено")
+
+    return event
+
+
 def delete_event_by_id(event_id):
     try:
         with db.atomic():
