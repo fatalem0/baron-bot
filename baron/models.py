@@ -3,7 +3,7 @@ from peewee import (
     ForeignKeyField,
     IntegerField,
     Model,
-    PostgresqlDatabase, Check, DateTimeField, SQL, CompositeKey,
+    PostgresqlDatabase, Check, DateTimeField, SQL, CompositeKey, BooleanField,
 )
 
 from configs.models import load_config_global
@@ -60,4 +60,9 @@ class UsersEvents(BaseModel):
         primary_key = CompositeKey('user_id', 'event_id')
 
 
-db.bind([Users, Events], bind_refs=False, bind_backrefs=False)
+class UsersOptions(BaseModel):
+    user = ForeignKeyField(Users, backref='userOptions', on_delete='CASCADE')
+    option = ForeignKeyField(EventOptions, backref='optionUsers', on_delete='CASCADE')
+    match = BooleanField()
+
+db.bind([Users, Events, UsersEvents , EventOptions, UsersOptions], bind_refs=False, bind_backrefs=False)
