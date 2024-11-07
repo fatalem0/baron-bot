@@ -1,11 +1,11 @@
 import logging
 
-from telegram import constants, Update
+from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.constants import ParseMode
 from telegram.ext import ConversationHandler, ContextTypes
 
 from baron.events import create_event
-from baron.users import find_user_by_id
+from baron.users import find_user_by_id, delete_user_from_event, find_user_by_username
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -77,7 +77,7 @@ async def opt_set_attendees(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     await update.message.reply_text(
-        "Кого позовёте? Напишите имена пользователей в формате @user, каждое с новой строки"
+        "Кого позовёте? Напишите имена пользователей, каждое с новой строки"
     )
 
     return MIN_ATTENDEES
@@ -106,13 +106,13 @@ async def finish_create_event(update: Update, context: ContextTypes.DEFAULT_TYPE
     user_id = update.effective_user.id
 
     event_author_id = find_user_by_id(user_id)
-    event_name = context.chat_data['event_name'],
-    event_date = context.chat_data['event_date'],
-    event_place = context.chat_data['event_place'],
-    event_attendees = context.chat_data['event_attendees'],
+    event_name = context.chat_data['event_name']
+    event_date = context.chat_data['event_date']
+    event_place = context.chat_data['event_place']
+    event_attendees = context.chat_data['event_attendees']
     event_min_attendees = update.message.text
 
-    new_event_id = create_event(
+    new_event_id, found_attendees = create_event(
         event_author_id,
         event_name,
         event_date,
@@ -120,6 +120,8 @@ async def finish_create_event(update: Update, context: ContextTypes.DEFAULT_TYPE
         event_attendees,
         event_min_attendees
     )
+
+    found_attendees_with_at_symbol = ', '.join(['@' + found_attendee.username for found_attendee in found_attendees])
 
     logger.info(
         """
@@ -143,15 +145,76 @@ async def finish_create_event(update: Update, context: ContextTypes.DEFAULT_TYPE
     )
 
     finish_msg = (
-        f"Готово! ID вашего мероприятия - {new_event_id}\n"
+        f"Готово! ID вашего события - {new_event_id}\n"
         f"📢Событие - {event_name}\n"
         f"📍Место - {event_place}\n"
         f"🕒Время - {event_date}\n"
-        f"Участники - {event_attendees}\n"
+        f"🫂Приглашенные участники - {found_attendees_with_at_symbol}\n"
         f"Минимальное количество человек - {event_min_attendees}\n"
         "Уведомление для голосования отправлено участникам\n"
     )
 
     await update.message.reply_text(finish_msg, parse_mode=ParseMode.MARKDOWN)
 
+    sent_to_others_message = (
+        f"Привет! {event_author_name} приглашает тебя на новое событие\n"
+        f"📢Событие - {event_name}\n"
+        f"📍Место - {event_place}\n"
+        f"🕒Время - {event_date}\n"
+        f"🫂Приглашенные участники - {found_attendees_with_at_symbol}\n"
+        "Что скажешь?\n"
+    )
+
+    found_attendee_usernames = [found_attendee.username for found_attendee in found_attendees]
+    not_found_attendee_usernames = list(set(event_attendees) - set(found_attendee_usernames))
+
+    found_attendee_with_bot_chat_ids = [found_attendee.with_bot_chat_id for found_attendee in found_attendees]
+
+    keyboard = [
+        [InlineKeyboardButton("Могу", callback_data='mogu')],
+        [InlineKeyboardButton("Не могу", callback_data='ne_mogu')]
+    ]
+
+    for attendee_with_bot_chat_id in found_attendee_with_bot_chat_ids:
+        await context.bot.send_message(
+            chat_id=attendee_with_bot_chat_id,
+            text=sent_to_others_message,
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+    final_msg = (
+        "Всё, теперь все в курсе про тусовку\n"
+    )
+
+    if not_found_attendee_usernames:
+        final_msg += (
+            f"У меня получилось достучаться до всех, кроме следующих персонажей: {', '.join('@' + not_found_attendee_username for not_found_attendee_username in not_found_attendee_usernames)}\n"
+            "Кажется, они ещё не знают про меня. Поделись ссылкой на меня и приглашай их на тусовку!\n"
+        )
+
+    await update.message.reply_text(final_msg, parse_mode=ParseMode.MARKDOWN)
+
     return ConversationHandler.END
+
+
+async def create_event_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    action = query.data
+    username = query.from_user.username
+    logger.info(f'Ответ от пользователя {username} для команды create_event = {action}')
+
+    if action == 'mogu':
+        await update.effective_message.edit_text("Вы подтвердили участие!")
+        # TODO: Здесь можно добавить логику для обработки подтверждения участия
+    elif action == 'ne_mogu':
+        await update.effective_message.edit_text("Сорян(")
+
+        found_user = find_user_by_username(username)
+        if found_user:
+            found_user_id = found_user.id
+            delete_user_from_event(found_user_id)
+        else:
+            await update.effective_message.edit_text("Не нашли тебя в БД, сорян(")

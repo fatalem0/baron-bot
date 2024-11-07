@@ -5,10 +5,11 @@ from telegram.ext import ContextTypes
 
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = (
-        "BarON бот\n"
+        "🍻BarON бот🍻\n"
         "---------\n"
-        "Команды:"
-        "*/create_event:* Создать мероприятие\n"
+        "Команды:\n"
+        "*/create_event:* Создать событие\n"
+        "*/cancel_event {event_id}:* Отменить событие\n"
         "*/help:* Вывести все команды\n"
     )
 
