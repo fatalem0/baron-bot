@@ -10,6 +10,8 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         "Команды:\n"
         "*/create_event:* Создать событие\n"
         "*/cancel_event {event_id}:* Отменить событие\n"
+        "*/add_option {event_id}:* Добавить вариант, куда пойти"
+        "*/poll_info {event_id}:* Увидеть результаты голосования онлайн"
         "*/help:* Вывести все команды\n"
     )
 
