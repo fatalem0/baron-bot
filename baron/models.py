@@ -43,7 +43,7 @@ class Events(BaseModel):
 
 class EventOptions(BaseModel):
     id = IntegerField(primary_key=True)
-    event_id = ForeignKeyField(Events, backref="event_options", on_delete='CASCADE')
+    event_id = ForeignKeyField(Events, backref="event_options", on_delete='CASCADE', null=False)
     date = CharField()
     place = CharField()
     place_link = CharField(null=True)

@@ -5,8 +5,8 @@ from telegram.constants import ParseMode
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
-from baron.events import delete_event_by_id, find_event_by_id
-from baron.models import UsersEvents, Users, EventOptions
+from baron.events import find_event_by_id
+from baron.models import UsersEvents, Users, EventOptions, Events
 from baron.users import find_user_by_username, find_user_by_id
 
 logging.basicConfig(
@@ -18,7 +18,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-async def cancel_event_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def approve_event_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.args:
         await update.message.reply_text("Пожалуйста, укажите event_id.")
         return
@@ -33,7 +33,7 @@ async def cancel_event_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     with_bot_chat_id = update.effective_chat.id
 
-    logger.info(f"Вызов команды /cancel_event от {username} с ID = {user_id} в чате {with_bot_chat_id}")
+    logger.info(f"Вызов команды /approve_event от {username} с ID = {user_id} в чате {with_bot_chat_id}")
 
     found_user = find_user_by_username(username)
 
@@ -51,22 +51,24 @@ async def cancel_event_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.info(f'found_event.author_id = {found_event.author_id}')
         logger.info(f'found_user.id = {found_user.id}')
         if str(found_user.id) != str(found_event.author_id):
-            await update.message.reply_text("Ты не автор события! Даже не пробуй его удалять")
+            await update.message.reply_text("Ты не автор события! Даже не пробуй его подтверждать")
             return
+
+        Events.update(status_id='approved').where(Events.id == event_id).execute()
 
         attendees = UsersEvents.select(Users).join(Users).where(UsersEvents.event_id == found_event.id)
         event = find_event_by_id(event_id)
         event_options = EventOptions.get_or_none(EventOptions.event_id == event_id)
-        event_author: Users = find_user_by_id(event.author_id)
-
-        delete_event_by_id(event_id)
+        event_author_name = find_user_by_id(event.author_id)
+        attendees_with_at_symbol = ', '.join(['@' + attendee.username for attendee in attendees.objects()])
 
         sent_to_others_message = (
-            f"❌Событие '{found_event.name}' отменено\n"
-            f"🏆Организатор события - {event_author.username}\n"
+            f"✅Событие '{found_event.name}' согласовано!\n"
+            f"🏆Организатор события - {event_author_name}\n"
             f"📍Место - {event_options.place}\n"
             f"📌Адрес - {event.latitude}, {event.longitude}\n"
             f"🕒Время - {event_options.date}\n"
+            f"🫂Участники - {attendees_with_at_symbol}\n"
         )
 
         await update.message.reply_text(sent_to_others_message, parse_mode=ParseMode.MARKDOWN)

@@ -1,10 +1,10 @@
 import logging
 from datetime import datetime
 
-from peewee import Update, Model, CharField, ForeignKeyField, DateTimeField, PostgresqlDatabase, IntegrityError, \
+from peewee import Model, CharField, ForeignKeyField, DateTimeField, PostgresqlDatabase, IntegrityError, \
     BigIntegerField, SQL, fn
 from requests import options
-from telegram import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackContext, CommandHandler, MessageHandler
 import DB_connect
 from baron.commands.nearby_cmd import init_nearby_handler
@@ -189,7 +189,7 @@ async def handle_suggest_option(update: Update, context: CallbackContext):
     logger.info("other variant")
     # Выводим сообщение или предлагаем пользователю что-то
     text = "Предложите свой вариант"
-    await update.message.reply_text(text)
+    await update.effective_chat.send_message(text)
 
 
 async def handle_adv_option(update: Update, context: CallbackContext):

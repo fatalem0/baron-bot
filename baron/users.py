@@ -13,15 +13,15 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-def find_user_by_id(id):
-    if db.is_closed():
-        db.connect()
+def find_user_by_id(user_id):
+    user = Users.get_or_none(Users.id == user_id)
 
-    try:
-        return Users.get(Users.id == id).id
-    finally:
-        if not db.is_closed():
-            db.close()
+    if user is None:
+        logger.error(f"Пользователь с id = {user_id} не найден")
+    else:
+        logger.info(f"Пользователь с id = {user_id} найден")
+
+    return user
 
 
 def find_user_by_username(username):

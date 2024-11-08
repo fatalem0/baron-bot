@@ -8,5 +8,11 @@
   "db": {
     "sslrootcert": "~/.postgresql/root.crt",
     "schema": "baron"
+  },
+  "jobs": {
+    "approve_event_if_has_min_attendees": {
+      "interval": 50000,
+      "first": 0
+    }
   }
 }
